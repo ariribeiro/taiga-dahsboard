@@ -63,6 +63,7 @@ button.ghost:hover{background:var(--soft);transform:none}
 .b-ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
 .b-late{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
 .b-closed{background:var(--soft);color:var(--muted)}
+.b-ahead{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
 .bar{position:relative;height:10px;background:var(--soft);border-radius:99px;margin:14px 0 4px}
 .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 .mark{position:absolute;top:-4px;width:3px;height:18px;border-radius:2px;background:var(--fg);opacity:.55}

@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { TaigaError } from "@/lib/taiga";
 import { loadSprint } from "@/lib/sprint";
+import { paceOf } from "@/lib/metrics";
 import { Header } from "../../header";
 import { Burndown } from "../../burndown";
 import { UnassignedKpi } from "../../unassigned";
@@ -24,7 +25,8 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
       return (<><Header name={cur.session.fullName} /><main className="wrap"><h2>{project.name}</h2><p className="muted">Este projeto não tem sprints.</p></main></>);
     }
     const { devs, overview: o, stats, unassigned: un } = data;
-    const late = o.expectedProgress != null && o.progress + 10 < o.expectedProgress;
+    const pace = paceOf(o.progress, o.expectedProgress, sprint.closed);
+    const PACE_LABEL = { closed: "Fechada", ahead: "Acima do ritmo", late: "Atrasada", ok: "No ritmo" } as const;
 
     const totalStatus = o.byStatus.reduce((n, x) => n + x.count, 0) || 1;
 
@@ -43,8 +45,8 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
             <div className="ov-main">
               <div className="row">
                 <h3>{sprint.name}</h3>
-                <span className={`badge ${sprint.closed ? "b-closed" : late ? "b-late" : "b-ok"}`}>
-                  {sprint.closed ? "Fechada" : late ? "Atrasada" : "No ritmo"}
+                <span className={`badge b-${pace.state}`}>
+                  {PACE_LABEL[pace.state]}
                 </span>
               </div>
               <p className="muted">
@@ -53,7 +55,10 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
               </p>
               <Bar value={o.progress} marker={sprint.closed ? null : o.expectedProgress} />
               {!sprint.closed && o.expectedProgress != null && (
-                <p className="muted small">A marca na barra indica o esperado pelo calendário ({o.expectedProgress}%).</p>
+                <p className="muted small">
+                  A marca na barra indica o esperado pelo calendário ({o.expectedProgress}%)
+                  {pace.state !== "ok" && <> · <b className={pace.state === "late" ? "err" : "ok-txt"}>{Math.abs(pace.diff)} p.p. {pace.diff > 0 ? "à frente" : "atrás"}</b></>}.
+                </p>
               )}
             </div>
           </section>

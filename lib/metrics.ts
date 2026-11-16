@@ -140,3 +140,21 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
   unassigned.stories.sort(byRef); unassigned.tasks.sort(byRef);
   return { devs: list, overview, unassigned };
 }
+
+/** Tolerância (em pontos percentuais) entre o progresso real e o esperado pelo calendário. */
+export const PACE_TOLERANCE = 10;
+
+export type Pace = { state: "closed" | "ahead" | "late" | "ok"; diff: number };
+
+/**
+ * Ritmo da sprint: compara o progresso real com o esperado pelo calendário.
+ *  - acima do ritmo: real > esperado + tolerância
+ *  - atrasada:       real + tolerância < esperado
+ *  - no ritmo:       o restante
+ * `diff` = real - esperado (pontos percentuais; positivo = à frente).
+ */
+export function paceOf(progress: number, expected: number | null, closed: boolean): Pace {
+  if (closed || expected == null) return { state: closed ? "closed" : "ok", diff: 0 };
+  const diff = progress - expected;
+  return { state: diff > PACE_TOLERANCE ? "ahead" : diff < -PACE_TOLERANCE ? "late" : "ok", diff };
+}

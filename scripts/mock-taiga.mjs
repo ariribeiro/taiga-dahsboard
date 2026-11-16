@@ -11,6 +11,7 @@ const members = [
 ];
 const milestones = [
   { id: 10, name: "Sprint 12", slug: "s12", estimated_start: iso(-7), estimated_finish: iso(6), closed: false },
+  { id: 11, name: "Sprint 13", slug: "s13", estimated_start: iso(-2), estimated_finish: iso(25), closed: false },
   { id: 9, name: "Sprint 11", slug: "s11", estimated_start: iso(-21), estimated_finish: iso(-8), closed: true },
 ];
 const stories = [
