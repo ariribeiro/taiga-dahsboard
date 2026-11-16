@@ -60,11 +60,11 @@ http.createServer((req, res) => {
   if (p === "/milestones") return send(res, 200, milestones);
   let m;
   if (p.endsWith("/attachments")) return send(res, 200, [
-    { id: 1, name: "diagrama.svg", attached_file: "/media/logo.svg", size: 20480, is_deprecated: false, description: "" },
+    // formato real do Taiga: "url" completa e/ou "attached_file" como caminho relativo ao MEDIA_ROOT
+    { id: 1, name: "diagrama.svg", attached_file: "attachments/a/1/hash1/diagrama.svg", url: null, size: 20480, is_deprecated: false },
+    { id: 3, name: "especificacao.pdf", attached_file: "attachments/b/2/hash2/especificacao.pdf", url: "http://localhost:9000/media/attachments/b/2/hash2/especificacao.pdf?token=abc", size: 3145728, is_deprecated: false },
     { id: 2, name: "foto-quebrada.png", attached_file: "http://localhost:9000/media/quebrada.png", size: 1000, is_deprecated: false },
-    { id: 3, name: "especificacao.pdf", attached_file: "/media/spec.pdf", size: 3145728, is_deprecated: false },
-    { id: 4, name: "antigo.png", attached_file: "/media/x.png", size: 1, is_deprecated: true }]);
-  if ((m = p.match(/^\/userstories\/(\d+)$/))) {
+    { id: 4, name: "antigo.png", attached_file: "/media/x.png", size: 1, is_deprecated: true }]);  if ((m = p.match(/^\/userstories\/(\d+)$/))) {
     const st = stories.find((x) => x.id === +m[1]); if (!st) return send(res, 404, {});
     return send(res, 200, { ...st, project: 1, description: "**PNLD–HU001: Integração com API**\n\n## COMO\nSistema PNLD\n\n## QUERO\nConsumir a API `PDDE_INTERATIVO` via [APIGateway](https://exemplo.com/gateway), usando o CPF do gestor.\n\n## Critérios\n- [x] filtro por sprint\n- [ ] exportar PDF\n- Item **importante**\n\n| Campo | Tipo |\n|---|---|\n| cpf | string |\n\n> Atenção ao timeout\n\n![relativa](/media/ana.svg)\n\n<img src=\"http://localhost:9000/media/logo.svg\" width=\"80\" onerror=\"alert(1)\"> HTML cru\n\n![quebrada](http://localhost:9000/media/quebrada.png)\n\n```json\n{\"ok\": true}\n```", tags: [["frontend", "#5b5bf0"], ["relatorios", null]],
       due_date: iso(5), created_date: iso(-20) + "T10:00:00Z", modified_date: iso(-1) + "T15:30:00Z", is_blocked: st.id === 2, blocked_note: "Aguardando API de dados",

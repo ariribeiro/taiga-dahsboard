@@ -48,10 +48,19 @@ export async function GET(req: Request) {
       .slice(-10)
       .map((h) => ({ user: h.user?.name || h.user?.username || "—", photo: h.user?.photo ?? null, date: h.created_at, text: String(h.comment) }));
 
-    const abs = (u: string | null | undefined) => { if (!u) return ""; try { return new URL(u, TAIGA_URL + "/").href; } catch { return u; } };
+    // Endereço de download do anexo. O Taiga manda "url" (completa, às vezes com token) e "attached_file"
+    // (às vezes só um caminho relativo ao MEDIA_ROOT, ex.: "attachments/a/b/hash/arquivo.pdf").
+    const attUrl = (a: any): string => {
+      const cands = [a.url, a.attached_file].filter((v) => typeof v === "string" && v) as string[];
+      const full = cands.find((v) => /^https?:\/\//i.test(v)) ?? cands.find((v) => v.startsWith("//"));
+      if (full) return full.startsWith("//") ? "https:" + full : full;
+      const rel = cands[0];
+      if (!rel) return "";
+      return rel.startsWith("/") ? new URL(rel, TAIGA_URL + "/").href : `${TAIGA_URL}/media/${rel}`;
+    };
     const IMG = /\.(png|jpe?g|gif|webp|bmp|svg|avif)(\?|$)/i;
     const attachments = (atts ?? []).filter((a) => !a.is_deprecated).map((a) => ({
-      id: a.id, name: String(a.name ?? "arquivo"), url: abs(a.attached_file), size: Number(a.size ?? 0),
+      id: a.id, name: String(a.name ?? "arquivo"), url: attUrl(a), size: Number(a.size ?? 0),
       isImage: IMG.test(String(a.name ?? "")) || IMG.test(String(a.attached_file ?? "")), description: String(a.description ?? ""),
     })).filter((a) => a.url);
 

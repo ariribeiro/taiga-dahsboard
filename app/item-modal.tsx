@@ -18,26 +18,28 @@ function Thumb({ src, name }: { src: string; name: string }) {
   return failed ? <span className="thumb-fail">🖼 {name}</span> : <img src={src} alt={name} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
 }
 
-const cache = new Map<string, ItemDetail>();
+const TTL = 3 * 60_000; // links de anexo podem ter token com validade curta
+const cache = new Map<string, { at: number; d: ItemDetail }>();
+const fresh = (k: string) => { const h = cache.get(k); return h && Date.now() - h.at < TTL ? h.d : null; };
 const dt = (d: string | null) => (d ? new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
 const day = (d: string | null) => (d ? new Date(d.slice(0, 10) + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 
 function Dialog({ kind, id, project, href, onClose }: { kind: "us" | "task"; id: number; project: number; href: string | null; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const key = `${kind}:${id}`;
-  const [data, setData] = useState<ItemDetail | null>(cache.get(key) ?? null);
+  const [data, setData] = useState<ItemDetail | null>(fresh(key));
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => { ref.current?.showModal(); }, []);
   useEffect(() => {
-    if (cache.has(key)) return;
+    if (fresh(key)) return;
     const ac = new AbortController();
     fetch(`/api/item?kind=${kind}&id=${id}&project=${project}`, { signal: ac.signal })
       .then(async (r) => {
         if (r.status === 401) { window.location.href = "/"; return; }
         const j = await r.json();
         if (!r.ok) throw new Error(j.error ?? "Erro");
-        cache.set(key, j); setData(j);
+        cache.set(key, { at: Date.now(), d: j }); setData(j);
       })
       .catch((e) => { if (e.name !== "AbortError") setErr(e.message || "Erro ao carregar"); });
     return () => ac.abort();
