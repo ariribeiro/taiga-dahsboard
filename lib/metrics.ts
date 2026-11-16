@@ -7,6 +7,7 @@ export type DevView = {
   stories: DevStory[]; tasks: DevTask[];
   points: number; closedPoints: number;
   tasksDone: number; progress: number; // 0-100
+  basis: "pontos" | "tasks"; // em que o % se baseia
   open: number; // tasks + stories ainda abertas
 };
 
@@ -40,7 +41,7 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
     if (!d) {
       const m = members.find((x) => x.user === id);
       d = { userId: id, name: m?.full_name ?? name ?? `Usuário ${id}`, photo: m?.photo ?? null, role: m?.role_name ?? "",
-        stories: [], tasks: [], points: 0, closedPoints: 0, tasksDone: 0, progress: 0, open: 0 };
+        stories: [], tasks: [], points: 0, closedPoints: 0, tasksDone: 0, progress: 0, basis: "tasks", open: 0 };
       devs.set(id, d);
     }
     return d;
@@ -78,7 +79,10 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
   for (const d of list) {
     // progresso: tasks quando existem; senão pontos das stories
     d.open = d.tasks.filter((t) => !t.closed).length + d.stories.filter((x) => !x.closed && x.role === "responsável").length;
-    d.progress = d.tasks.length ? pct(d.tasksDone, d.tasks.length) : pct(d.closedPoints, d.points);
+    // Pontos das stories são o critério principal (mesmo do resumo da sprint);
+    // sem pontos, usa as tasks.
+    d.basis = d.points > 0 ? "pontos" : "tasks";
+    d.progress = d.basis === "pontos" ? pct(d.closedPoints, d.points) : pct(d.tasksDone, d.tasks.length);
     d.points = Math.round(d.points * 10) / 10;
     d.closedPoints = Math.round(d.closedPoints * 10) / 10;
   }

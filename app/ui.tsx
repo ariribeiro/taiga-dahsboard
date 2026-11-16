@@ -12,10 +12,10 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   );
 }
 
-export function Ring({ value, size = 96, stroke = 10, label }: { value: number; size?: number; stroke?: number; label?: string }) {
+export function Ring({ value, size = 96, stroke = 10, label, title }: { value: number; size?: number; stroke?: number; label?: string; title?: string }) {
   const r = (size - stroke) / 2, c = 2 * Math.PI * r, v = Math.min(Math.max(value, 0), 100);
   return (
-    <div className="ring" style={{ width: size, height: size }}>
+    <div className="ring" style={{ width: size, height: size }} title={title}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${v}%`}>
         <circle cx={size / 2} cy={size / 2} r={r} className="ring-bg" strokeWidth={stroke} fill="none" />
         <circle cx={size / 2} cy={size / 2} r={r} className="ring-fg" strokeWidth={stroke} fill="none" strokeLinecap="round"

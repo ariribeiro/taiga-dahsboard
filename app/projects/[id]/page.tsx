@@ -81,7 +81,7 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
                   <div className="dc-top">
                     <Avatar name={d.name} size={46} />
                     <span className="who"><strong>{d.name}</strong><span className="muted">{d.role || "Time"}</span></span>
-                    <Ring value={d.progress} size={54} stroke={6} />
+                    <Ring value={d.progress} size={54} stroke={6} title={`Progresso baseado em ${d.basis}`} />
                   </div>
                   {idle ? <p className="muted dc-idle">Sem atividade nesta sprint</p> : (
                     <div className="dc-stats">

@@ -78,8 +78,9 @@ export default async function DevPage({ params, searchParams }: { params: { id: 
           <div className="ov-main">
             <h3>Situação na sprint</h3>
             <p className="muted">
-              {dev.tasks.length ? `${dev.tasksDone} de ${dev.tasks.length} tasks concluídas` : `${dev.closedPoints} de ${dev.points} pontos concluídos`}
+              {dev.basis === "pontos" ? `${dev.closedPoints} de ${dev.points} pontos concluídos` : `${dev.tasksDone} de ${dev.tasks.length} tasks concluídas`}
               {dev.open > 0 ? ` · ${dev.open} item(ns) em aberto` : " · tudo concluído"}
+              {` · % baseado em ${dev.basis}`}
             </p>
             <Bar value={dev.progress} />
           </div>
