@@ -60,9 +60,13 @@ function Body({ d, href }: { d: ItemDetail; href: string | null }) {
         {d.finished && <div><dt>Concluído em</dt><dd>{dt(d.finished)}</dd></div>}
       </dl>
 
+      <div className={`modal-cols${d.children.length || d.comments.length ? "" : " single"}`}>
+        <div>
       <h4 className="sec">Descrição</h4>
       {d.description.trim() ? <p className="desc">{d.description}</p> : <p className="muted">Sem descrição.</p>}
 
+        </div>
+        <div>
       {d.children.length > 0 && (<>
         <h4 className="sec">Tasks da story <span className="count">{d.children.length}</span></h4>
         <ul className="items">{d.children.map((t) => (
@@ -79,6 +83,9 @@ function Body({ d, href }: { d: ItemDetail; href: string | null }) {
           <li key={i}><Picture name={c.user} src={c.photo} size={28} />
             <div><b>{c.user}</b> <span className="muted">{dt(c.date)}</span><p>{c.text}</p></div></li>))}</ul>
       </>)}
+
+        </div>
+      </div>
 
       {href && <p className="modal-foot"><a href={href} target="_blank" rel="noopener noreferrer">Abrir no Taiga ↗</a></p>}
     </>

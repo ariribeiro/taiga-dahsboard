@@ -135,7 +135,7 @@ button.ghost:hover{background:var(--soft);transform:none}
 /* modal de detalhes */
 .linkbtn{background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer;border-radius:0}
 .linkbtn:hover{background:none;transform:none;filter:none;color:var(--accent);text-decoration:underline}
-.modal{border:0;padding:0;border-radius:16px;background:var(--card);color:var(--fg);width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 40px);box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
+.modal{border:0;padding:0;border-radius:16px;background:var(--card);color:var(--fg);width:min(1040px,calc(100vw - 32px));max-height:calc(100vh - 32px);box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
 .modal::backdrop{background:rgba(10,12,25,.55);backdrop-filter:blur(3px)}
 .modal-in{position:relative;padding:24px 26px 22px}.modal-x{position:absolute;top:14px;right:14px;padding:4px 10px}
 .modal-t{font-size:21px;letter-spacing:-.01em;margin:4px 40px 12px 0}.modal-badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
@@ -149,3 +149,13 @@ button.ghost:hover{background:var(--soft);transform:none}
 .modal .items{max-height:none}.modal .alert{margin:10px 0 0}
 .skel{display:grid;gap:12px;padding:8px 0}.skel i{display:block;height:18px;border-radius:8px;background:linear-gradient(90deg,var(--soft),var(--line),var(--soft));background-size:200% 100%;animation:sh 1.2s infinite}.skel i:first-child{width:40%}.skel i:nth-child(2){height:26px}
 @keyframes sh{to{background-position:-200% 0}}
+
+.modal-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 32px;align-items:start}.modal-cols.single{grid-template-columns:1fr}
+.modal-cols .sec:first-child{margin-top:16px}
+@media(max-width:820px){.modal-cols{grid-template-columns:1fr}}
+.modal-in{padding:22px 28px 18px}.facts{margin:12px 0 0;padding:12px 0;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+
+/* o modal nunca rola na horizontal: textos longos quebram em vez de estourar */
+.modal{overflow-x:hidden}.modal-in,.modal-cols>div,.facts>div,.facts dd,.cmts li>div{min-width:0}
+.modal .subj,.modal .desc,.modal .cmts p,.modal .modal-t,.modal .tag,.modal .facts dd{overflow-wrap:anywhere}
+.modal .items li{flex-wrap:wrap}.modal .items .subj{flex:1 1 200px}
