@@ -27,15 +27,16 @@ export function Burndown({ days }: { days: TStatsDay[] }) {
 
   return (
     <section className="card">
-      <div className="row">
-        <h4 className="sec" style={{ margin: 0 }}>Burndown da sprint</h4>
+      <details className="fold" open>
+      <summary className="row">
+        <h4 className="sec" style={{ margin: 0 }}><span className="chev" aria-hidden="true">▸</span> Burndown da sprint</h4>
         {lastReal && (
           <span className="muted">
             Restam <b>{r1(lastReal.open_points as number)}</b> pts
             {diff != null && <> · ideal {r1(lastReal.optimal_points as number)} · <span className={diff > 0.5 ? "err" : "ok-txt"}>{diff > 0.5 ? `${diff} pts acima do ideal` : diff < -0.5 ? `${Math.abs(diff)} pts à frente` : "no ideal"}</span></>}
           </span>
         )}
-      </div>
+      </summary>
       <svg viewBox={`0 0 ${W} ${H}`} className="bd" role="img" aria-label="Gráfico de burndown da sprint">
         <defs><linearGradient id="bdg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--accent)" stopOpacity=".25" /><stop offset="1" stopColor="var(--accent)" stopOpacity="0" /></linearGradient></defs>
         {ticks.map((t) => (<g key={t}><line x1={L} x2={W - R} y1={y(t)} y2={y(t)} className="bd-grid" /><text x={L - 8} y={y(t) + 4} textAnchor="end" className="bd-t">{r1(t)}</text></g>))}
@@ -47,6 +48,7 @@ export function Burndown({ days }: { days: TStatsDay[] }) {
         {real.map((p) => (<circle key={p[2]} cx={p[0]} cy={p[1]} r="3.5" className="bd-dot"><title>{`${dm(days[p[2]].day)}: ${r1(days[p[2]].open_points as number)} pts em aberto (ideal ${r1(days[p[2]].optimal_points ?? 0)})`}</title></circle>))}
       </svg>
       <div className="legend"><span><i style={{ background: "var(--accent)" }} />Pontos em aberto</span><span><i className="dash" />Ideal</span>{ti >= 0 && <span><i style={{ background: "var(--fg)", opacity: .5, width: 2, height: 10, borderRadius: 0 }} />Hoje</span>}</div>
+      </details>
     </section>
   );
 }

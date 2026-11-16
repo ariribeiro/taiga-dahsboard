@@ -127,3 +127,7 @@ button.ghost:hover{background:var(--soft);transform:none}
 .bd-ideal{stroke:var(--muted);stroke-width:2;stroke-dasharray:6 5}.bd-real{stroke:var(--accent);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
 .bd-dot{fill:var(--card);stroke:var(--accent);stroke-width:2}.bd-today{stroke:var(--fg);stroke-opacity:.35;stroke-width:1.5;stroke-dasharray:3 3}
 .legend i.dash{width:16px;height:0;border-top:2px dashed var(--muted);border-radius:0;background:none}.ok-txt{color:var(--ok);font-weight:600}
+
+.fold>summary{cursor:pointer;list-style:none;user-select:none}.fold>summary::-webkit-details-marker{display:none}
+.chev{display:inline-block;transition:transform .2s;margin-right:4px;font-size:13px}.fold[open] .chev{transform:rotate(90deg)}
+.fold>summary:hover h4{color:var(--fg)}
