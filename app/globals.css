@@ -117,3 +117,7 @@ button.ghost:hover{background:var(--soft);transform:none}
 .items li.done .subj{opacity:.55;text-decoration:line-through}
 
 .pic{object-fit:cover;flex:none;display:block;background:var(--soft)}
+
+.picker{align-items:center}.picker.loading select{opacity:.6}
+.spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
