@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import { TaigaError } from "@/lib/taiga";
 import { loadSprint } from "@/lib/sprint";
 import { Header } from "../../header";
+import { Burndown } from "../../burndown";
 import { Avatar, Bar, Kpi, Picture, Ring, SprintPicker, fmtDate as fmt } from "../../ui";
 
 export const dynamic = "force-dynamic";
@@ -15,12 +16,12 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
   if (!Number.isInteger(pid)) notFound();
 
   try {
-    const data = await loadSprint(pid, searchParams.sprint);
+    const data = await loadSprint(pid, searchParams.sprint, true);
     const { project, sorted, sprint } = data;
     if (!sprint) {
       return (<><Header name={cur.session.fullName} /><main className="wrap"><h2>{project.name}</h2><p className="muted">Este projeto não tem sprints.</p></main></>);
     }
-    const { devs, overview: o } = data;
+    const { devs, overview: o, stats } = data;
     const late = o.expectedProgress != null && o.progress + 10 < o.expectedProgress;
 
     const totalStatus = o.byStatus.reduce((n, x) => n + x.count, 0) || 1;
@@ -62,6 +63,8 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
             <Kpi icon="✓" value={<>{o.tasksDone}<small>/{o.tasks}</small></>} label="tasks" />
             <Kpi icon="!" value={unassigned} label="sem responsável" />
           </div>
+
+          {stats?.days && <Burndown days={stats.days} />}
 
           <section className="card">
             <h4 className="sec">Stories por status</h4>

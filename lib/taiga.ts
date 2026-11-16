@@ -98,3 +98,7 @@ export const getMilestones = (p: number) => taigaGet<TMilestone[]>(`/milestones?
 export const getStories = (p: number, m: number) => taigaGet<TStory[]>(`/userstories?project=${p}&milestone=${m}`);
 export const getTasks = (p: number, m: number) => taigaGet<TTask[]>(`/tasks?project=${p}&milestone=${m}`);
 export const getUser = (id: number) => taigaGet<TUserInfo>(`/users/${id}`);
+
+export type TStatsDay = { day: string; name: number | string; open_points: number | null; optimal_points: number | null };
+export type TMilestoneStats = { days?: TStatsDay[] };
+export const getMilestoneStats = (id: number) => taigaGet<TMilestoneStats>(`/milestones/${id}/stats`);

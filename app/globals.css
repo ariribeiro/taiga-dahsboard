@@ -121,3 +121,9 @@ button.ghost:hover{background:var(--soft);transform:none}
 .picker{align-items:center}.picker.loading select{opacity:.6}
 .spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+
+.bd{width:100%;height:auto;display:block;margin-top:10px}
+.bd-grid{stroke:var(--line);stroke-width:1}.bd-t{fill:var(--muted);font-size:11px}
+.bd-ideal{stroke:var(--muted);stroke-width:2;stroke-dasharray:6 5}.bd-real{stroke:var(--accent);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.bd-dot{fill:var(--card);stroke:var(--accent);stroke-width:2}.bd-today{stroke:var(--fg);stroke-opacity:.35;stroke-width:1.5;stroke-dasharray:3 3}
+.legend i.dash{width:16px;height:0;border-top:2px dashed var(--muted);border-radius:0;background:none}.ok-txt{color:var(--ok);font-weight:600}

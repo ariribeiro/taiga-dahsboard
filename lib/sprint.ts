@@ -1,13 +1,17 @@
-import { getMembers, getMilestones, getProject, getStories, getTasks, getUser } from "./taiga";
+import { getMembers, getMilestones, getProject, getStories, getTasks, getUser, getMilestoneStats } from "./taiga";
 import { buildViews, pickCurrentSprint } from "./metrics";
 
 /** Carrega tudo o que as páginas de sprint/dev precisam. */
-export async function loadSprint(pid: number, sprintParam?: string) {
+export async function loadSprint(pid: number, sprintParam?: string, withStats = false) {
   const [project, members, milestones] = await Promise.all([getProject(pid), getMembers(pid), getMilestones(pid)]);
   const sorted = [...milestones].sort((a, b) => b.estimated_start.localeCompare(a.estimated_start));
   const sprint = milestones.find((m) => String(m.id) === sprintParam) ?? pickCurrentSprint(milestones);
   if (!sprint) return { project, sorted, sprint: null as null };
-  const [stories, tasks] = await Promise.all([getStories(pid, sprint.id), getTasks(pid, sprint.id)]);
+  const [stories, tasks, stats] = await Promise.all([
+    getStories(pid, sprint.id), getTasks(pid, sprint.id),
+    // burndown: se o endpoint falhar, a página segue sem o gráfico
+    withStats ? getMilestoneStats(sprint.id).catch(() => null) : Promise.resolve(null),
+  ]);
 
   // Quem tem item atribuído mas não está (mais) na lista de membros: descobre o nome
   // pelo extra_info das próprias stories/tasks e, se faltar, por GET /users/{id}.
@@ -26,5 +30,5 @@ export async function loadSprint(pid: number, sprintParam?: string) {
   }));
 
   const { devs, overview } = buildViews(members, stories, tasks, sprint, known);
-  return { project, sorted, sprint, devs, overview, members };
+  return { project, sorted, sprint, devs, overview, members, stats };
 }
