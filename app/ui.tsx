@@ -44,3 +44,16 @@ export const Kpi = ({ value, label, icon }: { value: ReactNode; label: string; i
 export const Logo = () => (
   <span className="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg></span>
 );
+
+export function SprintPicker({ sprints, current }: { sprints: { id: number; name: string; closed: boolean }[]; current: number }) {
+  return (
+    <form method="get" className="picker">
+      <select name="sprint" defaultValue={current}>
+        {sprints.map((m) => <option key={m.id} value={m.id}>{m.name}{m.closed ? " (fechada)" : ""}</option>)}
+      </select>
+      <button type="submit">Ver</button>
+    </form>
+  );
+}
+
+export const fmtDate = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
