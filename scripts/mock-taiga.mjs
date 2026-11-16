@@ -22,6 +22,8 @@ const tasks = [
   { id: 1, ref: 201, subject: "Endpoint de relatórios", user_story: 2, assigned_to: 3, status_extra_info: DONE, is_closed: true },
   { id: 2, ref: 202, subject: "Gráficos", user_story: 2, assigned_to: 2, status_extra_info: DOING, is_closed: false },
   { id: 3, ref: 203, subject: "Revisar SSO", user_story: 1, assigned_to: 1, status_extra_info: DONE, is_closed: true },
+  { id: 5, ref: 205, subject: "Ajuste legado", user_story: 3, assigned_to: 190, assigned_to_extra_info: { id: 190, full_name_display: "Diego Antigo" }, status_extra_info: NEW, is_closed: false },
+  { id: 6, ref: 206, subject: "Doc API", user_story: 3, assigned_to: 233, status_extra_info: NEW, is_closed: false },
   { id: 4, ref: 204, subject: "Teste de carga", user_story: 3, assigned_to: 1, status_extra_info: NEW, is_closed: false },
 ];
 const send = (res, code, body) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(body)); };
@@ -36,6 +38,7 @@ http.createServer((req, res) => {
   }
   if (req.headers.authorization !== "Bearer tok") return send(res, 401, {});
   if (p === "/projects") return send(res, 200, [{ id: 1, name: "Projeto Alfa", slug: "alfa", description: "Produto principal" }, { id: 2, name: "Projeto Beta", slug: "beta", description: "" }]);
+  if (p === "/users/233") return send(res, 200, { id: 233, username: "paula", full_name_display: "Paula Externa" });
   if (p === "/projects/1") return send(res, 200, { id: 1, name: "Projeto Alfa", slug: "alfa" });
   if (p === "/memberships") return send(res, 200, members);
   if (p === "/milestones") return send(res, 200, milestones);

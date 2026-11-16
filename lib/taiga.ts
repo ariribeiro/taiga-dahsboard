@@ -77,14 +77,17 @@ export type TMilestone = {
   closed: boolean; total_points: number | null; closed_points: number | null;
 };
 export type TStatusInfo = { name: string; color: string };
+export type TUserInfo = { id: number; username?: string; full_name_display?: string; full_name?: string; photo?: string | null };
 export type TStory = {
   id: number; ref: number; subject: string;
   assigned_to: number | null; assigned_users: number[];
+  assigned_to_extra_info?: TUserInfo | null;
   status_extra_info: TStatusInfo; is_closed: boolean; total_points: number | null;
 };
 export type TTask = {
   id: number; ref: number; subject: string; user_story: number | null;
-  assigned_to: number | null; status_extra_info: TStatusInfo; is_closed: boolean;
+  assigned_to: number | null; assigned_to_extra_info?: TUserInfo | null;
+  status_extra_info: TStatusInfo; is_closed: boolean;
 };
 
 export const getProjects = (userId: number) =>
@@ -94,3 +97,4 @@ export const getMembers = (p: number) => taigaGet<TMember[]>(`/memberships?proje
 export const getMilestones = (p: number) => taigaGet<TMilestone[]>(`/milestones?project=${p}`);
 export const getStories = (p: number, m: number) => taigaGet<TStory[]>(`/userstories?project=${p}&milestone=${m}`);
 export const getTasks = (p: number, m: number) => taigaGet<TTask[]>(`/tasks?project=${p}&milestone=${m}`);
+export const getUser = (id: number) => taigaGet<TUserInfo>(`/users/${id}`);
