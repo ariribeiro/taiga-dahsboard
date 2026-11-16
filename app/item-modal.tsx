@@ -44,7 +44,7 @@ function Dialog({ kind, id, project, href, onClose }: { kind: "us" | "task"; id:
   }, [key, kind, id, project]);
 
   return (
-    <dialog ref={ref} className="modal" onClose={onClose} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }}>
+    <dialog ref={ref} className="modal" onClose={(e) => { if (e.target === e.currentTarget) onClose(); }} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }}>
       <div className="modal-in">
         {err ? <div className="m-pad"><p className="err">{err}</p><button className="ghost" onClick={() => ref.current?.close()}>Fechar</button></div>
           : !data ? <div className="m-pad"><div className="skel"><i /><i /><i /></div></div>

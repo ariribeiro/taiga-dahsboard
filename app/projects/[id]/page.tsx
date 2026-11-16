@@ -5,6 +5,8 @@ import { TaigaError } from "@/lib/taiga";
 import { loadSprint } from "@/lib/sprint";
 import { Header } from "../../header";
 import { Burndown } from "../../burndown";
+import { UnassignedKpi } from "../../unassigned";
+import { taigaWebLink } from "@/lib/links";
 import { Avatar, Bar, Kpi, Picture, Ring, SprintPicker, fmtDate as fmt } from "../../ui";
 
 export const dynamic = "force-dynamic";
@@ -21,11 +23,10 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
     if (!sprint) {
       return (<><Header name={cur.session.fullName} /><main className="wrap"><h2>{project.name}</h2><p className="muted">Este projeto não tem sprints.</p></main></>);
     }
-    const { devs, overview: o, stats } = data;
+    const { devs, overview: o, stats, unassigned: un } = data;
     const late = o.expectedProgress != null && o.progress + 10 < o.expectedProgress;
 
     const totalStatus = o.byStatus.reduce((n, x) => n + x.count, 0) || 1;
-    const unassigned = o.unassignedStories + o.unassignedTasks;
 
     return (
       <>
@@ -61,7 +62,9 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
             <Kpi icon="◎" value={<>{o.closedPoints}<small>/{o.totalPoints}</small></>} label="pontos" />
             <Kpi icon="▤" value={<>{o.storiesDone}<small>/{o.stories}</small></>} label="user stories" />
             <Kpi icon="✓" value={<>{o.tasksDone}<small>/{o.tasks}</small></>} label="tasks" />
-            <Kpi icon="!" value={unassigned} label="sem responsável" />
+            <UnassignedKpi project={pid} sprint={sprint.name}
+              stories={un.stories.map((x) => ({ ...x, href: taigaWebLink(project.slug, "us", x.ref) }))}
+              tasks={un.tasks.map((x) => ({ ...x, href: taigaWebLink(project.slug, "task", x.ref) }))} />
           </div>
 
           {stats?.days && <Burndown days={stats.days} />}

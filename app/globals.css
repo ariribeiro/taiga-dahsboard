@@ -190,3 +190,13 @@ button.ghost:hover{background:var(--soft);transform:none}
 .gallery a{display:block;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--soft)}.gallery img{display:block;width:100%;height:110px;object-fit:cover}
 .gallery .thumb-fail{border:0;width:100%;height:110px;display:grid;place-items:center;text-align:center;overflow-wrap:anywhere}
 .files{list-style:none;margin:0;padding:0;display:grid;gap:6px}.files li{display:flex;gap:8px;align-items:baseline;font-size:14px}.files a{color:var(--accent);overflow-wrap:anywhere}
+
+/* card clicável + modal de itens sem responsável */
+.kpi-btn{width:100%;text-align:left;font:inherit;color:inherit;font-weight:inherit;background:var(--card);cursor:pointer;position:relative;transition:.15s}
+.kpi-btn:hover{transform:none;filter:none;border-color:var(--accent);box-shadow:0 10px 26px -14px color-mix(in srgb,var(--accent) 55%,transparent)}
+.kpi-btn::after{content:"›";position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:22px;color:var(--muted)}
+.kpi-btn .kpi-ico{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
+.kpi .kpi-sub{display:block;font-size:11px}
+.modal.sm{width:min(760px,calc(100vw - 32px))}
+.m-body{overflow:auto;min-height:0;padding:4px 28px 24px}.m-body>section+section{margin-top:8px}
+@media(max-width:860px){.m-body{padding:4px 20px 20px}}

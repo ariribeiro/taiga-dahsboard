@@ -28,6 +28,7 @@ const tasks = [
   { id: 21, ref: 301, subject: "PDDE-01 — Cliente HTTP Olinda + DTOs", user_story: 2, assigned_to: 3, assigned_to_extra_info: { id: 3, full_name_display: "CARLA DIAS DA SILVA" }, status_extra_info: DONE, is_closed: true },
   { id: 22, ref: 302, subject: "403-T1 — Endpoint interno consulta diretor por CPF", user_story: 2, assigned_to: 3, assigned_to_extra_info: { id: 3, full_name_display: "CARLA DIAS DA SILVA" }, status_extra_info: DOING, is_closed: false },
   { id: 23, ref: 303, subject: "403-T2 — Persistência / sincronização (confirmar)", user_story: 2, assigned_to: 3, assigned_to_extra_info: { id: 3, full_name_display: "CARLA DIAS DA SILVA" }, status_extra_info: DONE, is_closed: true },
+  { id: 30, ref: 330, subject: "Definir esquema de cache", user_story: 3, assigned_to: null, status_extra_info: NEW, is_closed: false },
   { id: 4, ref: 204, subject: "Teste de carga", user_story: 3, assigned_to: 1, status_extra_info: NEW, is_closed: false },
 ];
 const send = (res, code, body) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(body)); };

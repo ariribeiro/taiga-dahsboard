@@ -11,6 +11,9 @@ export type DevView = {
   open: number; // tasks + stories ainda abertas
 };
 
+export type UnassignedItem = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; points?: number; storyRef?: number | null };
+export type Unassigned = { stories: UnassignedItem[]; tasks: UnassignedItem[] };
+
 export type SprintOverview = {
   totalPoints: number; closedPoints: number;
   stories: number; storiesDone: number;
@@ -50,10 +53,14 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
 
   const storyByd = new Map(stories.map((s) => [s.id, s]));
   let unassignedStories = 0, unassignedTasks = 0;
+  const unassigned: Unassigned = { stories: [], tasks: [] };
 
   for (const s of stories) {
     const owners = s.assigned_users?.length ? s.assigned_users : s.assigned_to ? [s.assigned_to] : [];
-    if (!owners.length) unassignedStories++;
+    if (!owners.length) {
+      unassignedStories++;
+      unassigned.stories.push({ id: s.id, ref: s.ref, subject: s.subject, status: s.status_extra_info.name, color: s.status_extra_info.color, closed: s.is_closed, points: s.total_points ?? 0 });
+    }
     const share = (s.total_points ?? 0) / Math.max(owners.length, 1);
     for (const o of owners) {
       const d = ensure(o);
@@ -64,7 +71,11 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
   }
 
   for (const t of tasks) {
-    if (!t.assigned_to) { unassignedTasks++; continue; }
+    if (!t.assigned_to) {
+      unassignedTasks++;
+      unassigned.tasks.push({ id: t.id, ref: t.ref, subject: t.subject, status: t.status_extra_info.name, color: t.status_extra_info.color, closed: t.is_closed, storyRef: (t.user_story ? storyByd.get(t.user_story)?.ref : null) ?? null });
+      continue;
+    }
     const d = ensure(t.assigned_to);
     const parent = t.user_story ? storyByd.get(t.user_story) : undefined;
     d.tasks.push({ id: t.id, ref: t.ref, subject: t.subject, status: t.status_extra_info.name, color: t.status_extra_info.color, closed: t.is_closed, storyRef: parent?.ref ?? null });
@@ -114,5 +125,7 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
     byStatus: [...statusMap.values()],
     unassignedStories, unassignedTasks,
   };
-  return { devs: list, overview };
+  const byRef = (a: UnassignedItem, b: UnassignedItem) => Number(a.closed) - Number(b.closed) || a.ref - b.ref; // abertos primeiro
+  unassigned.stories.sort(byRef); unassigned.tasks.sort(byRef);
+  return { devs: list, overview, unassigned };
 }

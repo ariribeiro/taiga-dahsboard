@@ -29,6 +29,6 @@ export async function loadSprint(pid: number, sprintParam?: string, withStats = 
     try { const u = await getUser(i); const n = u.full_name_display || u.full_name || u.username; if (n) known.set(i, { name: n, photo: u.photo ?? null }); } catch { /* sem permissão: mantém o fallback */ }
   }));
 
-  const { devs, overview } = buildViews(members, stories, tasks, sprint, known);
-  return { project, sorted, sprint, devs, overview, members, stats };
+  const { devs, overview, unassigned } = buildViews(members, stories, tasks, sprint, known);
+  return { project, sorted, sprint, devs, overview, unassigned, members, stats };
 }
