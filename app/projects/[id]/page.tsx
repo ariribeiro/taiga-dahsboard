@@ -3,7 +3,8 @@ import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { TaigaError } from "@/lib/taiga";
 import { loadSprint } from "@/lib/sprint";
-import { paceOf } from "@/lib/metrics";
+import { paceOf, PACE_TOLERANCE, BLOCKED_STATUS_PATTERN } from "@/lib/metrics";
+import { CriteriaHelp } from "../../criteria-help";
 import { Header } from "../../header";
 import { Burndown } from "../../burndown";
 import { UnassignedKpi } from "../../unassigned";
@@ -45,8 +46,10 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
             <div className="ov-main">
               <div className="row">
                 <h3>{sprint.name}</h3>
-                <span className={`badge b-${pace.state}`}>
-                  {PACE_LABEL[pace.state]}
+                <span className="badge-row">
+                  <span className={`badge b-${pace.state}`}>{PACE_LABEL[pace.state]}</span>
+                  <CriteriaHelp info={{ sprint: sprint.name, closed: sprint.closed, progress: o.progress, expected: o.expectedProgress, diff: pace.diff, state: pace.state,
+                    tolerance: PACE_TOLERANCE, hasPoints: o.totalPoints > 0, blockedPattern: BLOCKED_STATUS_PATTERN }} />
                 </span>
               </div>
               <p className="muted">

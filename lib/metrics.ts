@@ -30,6 +30,9 @@ export type SprintOverview = {
 // impedimento/impedido/bloqueado/blocked e pode ser trocado em BLOCKED_STATUS_REGEX (.env.local).
 const BLOCK_RE = (() => { try { return new RegExp(process.env.BLOCKED_STATUS_REGEX || "imped|bloquead|blocked", "i"); } catch { return /imped|bloquead|blocked/i; } })();
 
+/** Padrão (regex) usado para reconhecer status de impedimento — exibido na ajuda da tela. */
+export const BLOCKED_STATUS_PATTERN = BLOCK_RE.source;
+
 /** Motivo do impedimento (ou o nome do status); null se o item não está impedido. */
 const blockedNote = (x: { is_blocked?: boolean; blocked_note?: string; status_extra_info: { name: string } }) =>
   x.is_blocked ? x.blocked_note?.trim() || "Bloqueado" : BLOCK_RE.test(x.status_extra_info.name) ? `Status: ${x.status_extra_info.name}` : null;

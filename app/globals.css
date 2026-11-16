@@ -240,3 +240,13 @@ button.ghost:hover{background:var(--soft);transform:none}
 .devcard.blocked{border-color:color-mix(in srgb,var(--bad) 55%,var(--line));box-shadow:var(--shadow),inset 4px 0 0 var(--bad)}
 .devcard.blocked:hover{border-color:var(--bad)}
 .dc-block{margin-top:14px;padding:7px 10px;border-radius:10px;font-size:12.5px;font-weight:600;color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent);border:1px solid color-mix(in srgb,var(--bad) 28%,transparent)}
+
+/* ajuda dos critérios */
+.badge-row{display:inline-flex;align-items:center;gap:8px}
+.help-btn{width:22px;height:22px;padding:0;border-radius:50%;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:12px;font-weight:700;line-height:1;display:grid;place-items:center;cursor:pointer;transition:.15s}
+.help-btn:hover{background:var(--soft);color:var(--accent);border-color:var(--accent);transform:none;filter:none}
+.modal.help{width:min(680px,calc(100vw - 32px))}
+.help-body section+section{margin-top:6px}.help-body p{margin:.5em 0;font-size:14px}.help-body ul{margin:.4em 0;padding-left:1.2em;font-size:14px}.help-body li{margin:.3em 0}
+.help-body code{background:var(--soft);padding:1px 6px;border-radius:6px;font-size:.88em;overflow-wrap:anywhere}
+.help-t{border-collapse:collapse;width:100%;margin:8px 0;font-size:14px}.help-t td{padding:7px 8px;border-top:1px solid var(--line);vertical-align:middle}.help-t tr:first-child td{border-top:0}.help-t td:first-child{white-space:nowrap;width:1%}
+.help-now{margin-top:10px!important;padding:10px 12px;border-radius:10px;background:var(--soft)}
