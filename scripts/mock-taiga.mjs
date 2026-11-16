@@ -5,13 +5,13 @@ const d = new Date(), iso = (n) => new Date(d.getTime() + n * 864e5).toISOString
 const st = (name, color) => ({ name, color });
 const NEW = st("Novo", "#999"), DOING = st("Em andamento", "#e6a700"), DONE = st("Pronto", "#1f9d6b");
 const members = [
-  { user: 1, full_name: "Ana Souza", photo: "http://localhost:9000/media/ana.svg", role_name: "Back", is_active: true },
-  { user: 2, full_name: "Bruno Lima", photo: "http://localhost:9000/media/quebrada.png", role_name: "Front", is_active: true },
-  { user: 3, full_name: "Carla Dias", photo: null, role_name: "Back", is_active: true },
+  { user: 1, full_name: "Ana Souza", photo: "http://localhost:9000/media/ana.svg", role_name: "Desenvolvedor", is_active: true },
+  { user: 2, full_name: "Bruno Lima", photo: "http://localhost:9000/media/quebrada.png", role_name: "Analista de negócios e requisitos", is_active: true },
+  { user: 3, full_name: "Carla Dias", photo: null, role_name: "Product Owner", is_active: true },
   // sem nenhuma story/task na sprint:
-  { user: 4, full_name: "Eva Rocha", photo: null, role_name: "Front", is_active: true },
-  { user: 5, full_name: "Fabio Inativo", photo: null, role_name: "Back", is_active: false },   // conta desativada
-  { user: 6, full_name: "Gil Semcampo", photo: null, role_name: "QA" },                          // resposta sem o campo is_active
+  { user: 4, full_name: "Eva Rocha", photo: null, role_name: "ANALISTA DE TESTE DE QUALIDADE", is_active: true },
+  { user: 5, full_name: "Fabio Inativo", photo: null, role_name: "Arquiteto", is_active: false },   // conta desativada
+  { user: 6, full_name: "Gil Semcampo", photo: null, role_name: "ESTAGIÁRIO" },                          // resposta sem o campo is_active
   { user: null, full_name: "convite@pendente.com", photo: null, role_name: "Back", is_active: false }, // convite pendente
 ];
 const milestones = [

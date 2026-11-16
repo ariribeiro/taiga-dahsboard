@@ -1,4 +1,5 @@
 import type { TMember, TMilestone, TStory, TTask } from "./taiga";
+import { allowedRoleSet, normRole } from "./roles";
 
 export type DevStory = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; points: number; role: "responsável" | "via task"; blocked: string | null };
 export type DevTask = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; storyRef: number | null; blocked: string | null };
@@ -115,6 +116,11 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
   }
   list.sort((a, b) => b.tasks.length + b.stories.length - (a.tasks.length + a.stories.length));
 
+  // Só mostra quem tem um dos papéis configurados (lib/roles.ts). Quem não é membro do projeto
+  // ("Fora do projeto") não tem papel e fica de fora. Se o Taiga não enviar o papel de ninguém, não filtra.
+  const roles = allowedRoleSet();
+  const shown = roles && members.some((m) => m.role_name) ? list.filter((d) => roles.has(normRole(d.role))) : list;
+
   // visão geral
   const totalPoints = stories.reduce((n, s) => n + (s.total_points ?? 0), 0);
   const closedPoints = stories.filter((s) => s.is_closed).reduce((n, s) => n + (s.total_points ?? 0), 0);
@@ -143,7 +149,7 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
   };
   const byRef = (a: UnassignedItem, b: UnassignedItem) => Number(a.closed) - Number(b.closed) || a.ref - b.ref; // abertos primeiro
   unassigned.stories.sort(byRef); unassigned.tasks.sort(byRef);
-  return { devs: list, overview, unassigned };
+  return { devs: shown, overview, unassigned };
 }
 
 /** Tolerância (em pontos percentuais) entre o progresso real e o esperado pelo calendário. */

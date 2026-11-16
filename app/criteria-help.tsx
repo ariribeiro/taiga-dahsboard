@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 export type HelpInfo = {
   sprint: string; closed: boolean;
   progress: number; expected: number | null; diff: number; state: "closed" | "ahead" | "late" | "ok";
-  tolerance: number; hasPoints: boolean; blockedPattern: string;
+  tolerance: number; hasPoints: boolean; blockedPattern: string; roles: string[] | null;
 };
 
 const LABEL = { closed: "Fechada", ahead: "Acima do ritmo", late: "Atrasada", ok: "No ritmo" } as const;
@@ -58,6 +58,9 @@ function Dialog({ info, onClose }: { info: HelpInfo; onClose: () => void }) {
           <section>
             <h4 className="sec">Cards dos desenvolvedores</h4>
             <ul>
+              <li><b>Quem aparece:</b> {info.roles
+                ? <>membros do projeto com os papéis <i>{info.roles.join(", ")}</i> (ativos, tendo ou não atividade na sprint). Pessoas de outros papéis, ou que não são mais do projeto, não ganham card, mas o trabalho delas continua nos totais da sprint.</>
+                : <>todos os membros ativos do projeto, tendo ou não atividade na sprint, e quem tem itens na sprint.</>}</li>
               <li><b>Anel de progresso:</b> pontos concluídos ÷ pontos das stories de que a pessoa é responsável. Se ela não tem pontos, usa tasks concluídas ÷ tasks. Passe o mouse no anel para ver a base usada.</li>
               <li><b>Stories com mais de um responsável</b> têm os pontos divididos igualmente entre eles.</li>
               <li><b>Em aberto:</b> tasks abertas + stories abertas em que a pessoa é responsável.</li>
