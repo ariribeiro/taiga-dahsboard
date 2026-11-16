@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import type { ItemDetail } from "@/lib/item";
 import { Picture } from "./picture";
 import { Md } from "./markdown";
+import { Lightbox } from "./lightbox";
 
 // Nomes vindos TODO EM MAIÚSCULAS ficam em formato de nome próprio.
 const pretty = (n: string) => (n && n === n.toUpperCase() ? n.toLowerCase().replace(/(^|\s)(\S)/g, (_, a, b) => a + b.toUpperCase()).replace(/\b(Da|De|Do|Das|Dos|E)\b/g, (m) => m.toLowerCase()) : n);
@@ -57,6 +58,8 @@ function Dialog({ kind, id, project, href, onClose }: { kind: "us" | "task"; id:
 }
 
 function Body({ d, href, onClose }: { d: ItemDetail; href: string | null; onClose: () => void }) {
+  const [lb, setLb] = useState<number | null>(null);
+  const imgs = d.attachments.filter((a) => a.isImage);
   const done = d.children.filter((t) => t.closed).length;
   return (
     <>
@@ -85,11 +88,11 @@ function Body({ d, href, onClose }: { d: ItemDetail; href: string | null; onClos
 
           {d.attachments.length > 0 && (<>
             <h4 className="sec">Anexos <span className="count">{d.attachments.length}</span></h4>
-            {d.attachments.some((a) => a.isImage) && (
-              <div className="gallery">{d.attachments.filter((a) => a.isImage).map((a) => (
-                <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer" title={a.name}>
+            {imgs.length > 0 && (
+              <div className="gallery">{imgs.map((a, k) => (
+                <button key={a.id} type="button" className="gthumb" onClick={() => setLb(k)} title={a.name} aria-label={`Ver ${a.name}`}>
                   <Thumb src={a.url} name={a.name} />
-                </a>))}</div>
+                </button>))}</div>
             )}
             <ul className="files">{d.attachments.filter((a) => !a.isImage).map((a) => (
               <li key={a.id}><span aria-hidden="true">📎</span><a href={a.url} target="_blank" rel="noopener noreferrer">{a.name}</a><span className="muted">{size(a.size)}</span></li>))}</ul>
@@ -134,6 +137,7 @@ function Body({ d, href, onClose }: { d: ItemDetail; href: string | null; onClos
           </>)}
         </aside>
       </div>
+      {lb !== null && <Lightbox images={imgs.map((a) => ({ src: a.url, name: a.name }))} start={lb} onClose={() => setLb(null)} />}
     </>
   );
 }

@@ -62,6 +62,8 @@ http.createServer((req, res) => {
   if (p.endsWith("/attachments")) return send(res, 200, [
     // formato real do Taiga: "url" completa e/ou "attached_file" como caminho relativo ao MEDIA_ROOT
     { id: 1, name: "diagrama.svg", attached_file: "attachments/a/1/hash1/diagrama.svg", url: null, size: 20480, is_deprecated: false },
+    { id: 5, name: "organograma.svg", attached_file: "attachments/c/3/hash3/organograma.svg", size: 9000, is_deprecated: false },
+    { id: 6, name: "tela-inicial.svg", attached_file: "attachments/d/4/hash4/tela-inicial.svg", size: 8000, is_deprecated: false },
     { id: 3, name: "especificacao.pdf", attached_file: "attachments/b/2/hash2/especificacao.pdf", url: "http://localhost:9000/media/attachments/b/2/hash2/especificacao.pdf?token=abc", size: 3145728, is_deprecated: false },
     { id: 2, name: "foto-quebrada.png", attached_file: "http://localhost:9000/media/quebrada.png", size: 1000, is_deprecated: false },
     { id: 4, name: "antigo.png", attached_file: "/media/x.png", size: 1, is_deprecated: true }]);  if ((m = p.match(/^\/userstories\/(\d+)$/))) {
