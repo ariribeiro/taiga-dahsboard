@@ -9,6 +9,15 @@ import { Md } from "./markdown";
 const pretty = (n: string) => (n && n === n.toUpperCase() ? n.toLowerCase().replace(/(^|\s)(\S)/g, (_, a, b) => a + b.toUpperCase()).replace(/\b(Da|De|Do|Das|Dos|E)\b/g, (m) => m.toLowerCase()) : n);
 const first = (n: string) => pretty(n).split(" ")[0];
 
+const size = (n: number) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : n >= 1024 ? `${Math.round(n / 1024)} KB` : n ? `${n} B` : "");
+
+/** Miniatura de anexo; se não carregar, vira um link com o nome do arquivo. */
+function Thumb({ src, name }: { src: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+  // eslint-disable-next-line @next/next/no-img-element
+  return failed ? <span className="thumb-fail">🖼 {name}</span> : <img src={src} alt={name} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
+}
+
 const cache = new Map<string, ItemDetail>();
 const dt = (d: string | null) => (d ? new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
 const day = (d: string | null) => (d ? new Date(d.slice(0, 10) + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -70,13 +79,25 @@ function Body({ d, href, onClose }: { d: ItemDetail; href: string | null; onClos
           {d.blocked && <p className="alert">Motivo do bloqueio: {d.blocked}</p>}
 
           <h4 className="sec">Descrição</h4>
-          {d.description.trim() ? <Md text={d.description} /> : <p className="muted">Sem descrição.</p>}
+          {d.description.trim() ? <Md text={d.description} base={d.baseUrl} /> : <p className="muted">Sem descrição.</p>}
+
+          {d.attachments.length > 0 && (<>
+            <h4 className="sec">Anexos <span className="count">{d.attachments.length}</span></h4>
+            {d.attachments.some((a) => a.isImage) && (
+              <div className="gallery">{d.attachments.filter((a) => a.isImage).map((a) => (
+                <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer" title={a.name}>
+                  <Thumb src={a.url} name={a.name} />
+                </a>))}</div>
+            )}
+            <ul className="files">{d.attachments.filter((a) => !a.isImage).map((a) => (
+              <li key={a.id}><span aria-hidden="true">📎</span><a href={a.url} target="_blank" rel="noopener noreferrer">{a.name}</a><span className="muted">{size(a.size)}</span></li>))}</ul>
+          </>)}
 
           {d.comments.length > 0 && (<>
             <h4 className="sec">Comentários <span className="count">{d.comments.length}</span></h4>
             <ul className="cmts">{d.comments.map((c, i) => (
               <li key={i}><Picture name={pretty(c.user)} src={c.photo} size={30} />
-                <div><b>{pretty(c.user)}</b> <span className="muted">{dt(c.date)}</span><Md text={c.text} /></div></li>))}</ul>
+                <div><b>{pretty(c.user)}</b> <span className="muted">{dt(c.date)}</span><Md text={c.text} base={d.baseUrl} /></div></li>))}</ul>
           </>)}
         </div>
 

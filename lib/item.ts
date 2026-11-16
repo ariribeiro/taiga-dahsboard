@@ -13,5 +13,7 @@ export type ItemDetail = {
   tags: { name: string; color: string | null }[];
   parent: { ref: number; subject: string } | null; // task -> story
   children: { ref: number; subject: string; status: string; color: string; closed: boolean; assignee: string | null; assigneePhoto: string | null }[]; // story -> tasks
+  baseUrl: string; // endereço do Taiga, para resolver URLs relativas de imagens
+  attachments: { id: number; name: string; url: string; size: number; isImage: boolean; description: string }[];
   comments: { user: string; photo: string | null; date: string; text: string }[];
 };

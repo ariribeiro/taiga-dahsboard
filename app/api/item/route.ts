@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { getMembers, getUser, taigaGet, TaigaError } from "@/lib/taiga";
+import { getMembers, getUser, taigaGet, TaigaError, TAIGA_URL } from "@/lib/taiga";
 import type { ItemDetail } from "@/lib/item";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -19,11 +19,12 @@ export async function GET(req: Request) {
   const hist = kind === "us" ? "userstory" : "task";
 
   try {
-    const [it, members, history, children] = await Promise.all([
+    const [it, members, history, children, atts] = await Promise.all([
       taigaGet<any>(`/${base}/${id}`),
       getMembers(project).catch(() => []),
       taigaGet<any[]>(`/history/${hist}/${id}`).catch(() => []),
       kind === "us" ? taigaGet<any[]>(`/tasks?user_story=${id}`).catch(() => []) : Promise.resolve([] as any[]),
+      taigaGet<any[]>(`/${base}/attachments?object_id=${id}&project=${project}`).catch(() => [] as any[]),
     ]);
     if (it.project && it.project !== project) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
 
@@ -47,6 +48,13 @@ export async function GET(req: Request) {
       .slice(-10)
       .map((h) => ({ user: h.user?.name || h.user?.username || "—", photo: h.user?.photo ?? null, date: h.created_at, text: String(h.comment) }));
 
+    const abs = (u: string | null | undefined) => { if (!u) return ""; try { return new URL(u, TAIGA_URL + "/").href; } catch { return u; } };
+    const IMG = /\.(png|jpe?g|gif|webp|bmp|svg|avif)(\?|$)/i;
+    const attachments = (atts ?? []).filter((a) => !a.is_deprecated).map((a) => ({
+      id: a.id, name: String(a.name ?? "arquivo"), url: abs(a.attached_file), size: Number(a.size ?? 0),
+      isImage: IMG.test(String(a.name ?? "")) || IMG.test(String(a.attached_file ?? "")), description: String(a.description ?? ""),
+    })).filter((a) => a.url);
+
     const out: ItemDetail = {
       kind, id, ref: it.ref, subject: it.subject,
       status: it.status_extra_info ? { name: it.status_extra_info.name, color: it.status_extra_info.color } : null,
@@ -63,7 +71,7 @@ export async function GET(req: Request) {
         ref: t.ref, subject: t.subject, status: t.status_extra_info?.name ?? "", color: t.status_extra_info?.color ?? "#999",
         closed: !!t.is_closed, assignee: nm(t.assigned_to_extra_info), assigneePhoto: t.assigned_to_extra_info?.photo ?? null,
       })),
-      comments,
+      baseUrl: TAIGA_URL, attachments, comments,
     };
     return NextResponse.json(out);
   } catch (e) {
