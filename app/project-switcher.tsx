@@ -38,7 +38,7 @@ export function ProjectSwitcher({ projects }: { projects: P[] }) {
 
   return (
     <div className="psw" ref={box}>
-      <button type="button" className="psw-btn" onClick={() => setOpen((o) => !o)} aria-haspopup="listbox" aria-expanded={open} title="Trocar de projeto">
+      <button type="button" className="psw-btn" onClick={() => setOpen((o) => !o)} aria-haspopup="listbox" aria-expanded={open} title={current ? `${current.name} — trocar de projeto` : "Trocar de projeto"}>
         {current ? <Picture name={current.name} src={current.logo} size={22} square /> : <span className="psw-ico" aria-hidden="true">▦</span>}
         <span className="psw-name">{current ? current.name : "Selecionar projeto"}</span>
         <span className="psw-chev" aria-hidden="true">▾</span>
@@ -48,7 +48,7 @@ export function ProjectSwitcher({ projects }: { projects: P[] }) {
           {searchable && <input ref={search} className="psw-search" placeholder="Buscar projeto…" value={q} onChange={(e) => setQ(e.target.value)} />}
           <div className="psw-list">
             {list.map((p) => (
-              <button key={p.id} type="button" role="option" aria-selected={p.id === currentId} className={`psw-item${p.id === currentId ? " on" : ""}`} onClick={() => go(p)}>
+              <button key={p.id} type="button" role="option" aria-selected={p.id === currentId} className={`psw-item${p.id === currentId ? " on" : ""}`} title={p.name} onClick={() => go(p)}>
                 <Picture name={p.name} src={p.logo} size={24} square />
                 <span className="psw-label">{p.name}</span>
                 {p.id === currentId && <span className="psw-check" aria-hidden="true">✓</span>}
