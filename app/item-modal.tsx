@@ -1,7 +1,13 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type { ItemDetail } from "@/lib/item";
 import { Picture } from "./picture";
+import { Md } from "./markdown";
+
+// Nomes vindos TODO EM MAIÚSCULAS ficam em formato de nome próprio.
+const pretty = (n: string) => (n && n === n.toUpperCase() ? n.toLowerCase().replace(/(^|\s)(\S)/g, (_, a, b) => a + b.toUpperCase()).replace(/\b(Da|De|Do|Das|Dos|E)\b/g, (m) => m.toLowerCase()) : n);
+const first = (n: string) => pretty(n).split(" ")[0];
 
 const cache = new Map<string, ItemDetail>();
 const dt = (d: string | null) => (d ? new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
@@ -31,63 +37,80 @@ function Dialog({ kind, id, project, href, onClose }: { kind: "us" | "task"; id:
   return (
     <dialog ref={ref} className="modal" onClose={onClose} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }}>
       <div className="modal-in">
-        <button className="modal-x ghost" onClick={() => ref.current?.close()} aria-label="Fechar">✕</button>
-        {err ? <p className="err">{err}</p> : !data ? <div className="skel"><i /><i /><i /></div> : <Body d={data} href={href} />}
+        {err ? <div className="m-pad"><p className="err">{err}</p><button className="ghost" onClick={() => ref.current?.close()}>Fechar</button></div>
+          : !data ? <div className="m-pad"><div className="skel"><i /><i /><i /></div></div>
+          : <Body d={data} href={href} onClose={() => ref.current?.close()} />}
       </div>
     </dialog>
   );
 }
 
-function Body({ d, href }: { d: ItemDetail; href: string | null }) {
+function Body({ d, href, onClose }: { d: ItemDetail; href: string | null; onClose: () => void }) {
+  const done = d.children.filter((t) => t.closed).length;
   return (
     <>
-      <p className="muted">{d.kind === "us" ? "User story" : "Task"} #{d.ref}{d.parent && <> · story #{d.parent.ref} — {d.parent.subject}</>}</p>
-      <h3 className="modal-t">{d.subject}</h3>
-      <div className="modal-badges">
-        {d.status && <span className="chip" style={{ ["--c" as string]: d.status.color }}><i />{d.status.name}</span>}
-        {d.blocked && <span className="chip" style={{ ["--c" as string]: "#e5484d" }} title={d.blocked}><i />Bloqueado</span>}
-        {d.tags.map((t) => <span key={t.name} className="tag" style={t.color ? { ["--c" as string]: t.color } : undefined}>{t.name}</span>)}
-      </div>
-      {d.blocked && <p className="alert">Motivo do bloqueio: {d.blocked}</p>}
-
-      <dl className="facts">
-        <div><dt>Responsável</dt><dd>{d.assignees.length ? d.assignees.map((a) => <span key={a.name} className="who-i"><Picture name={a.name} src={a.photo} size={22} />{a.name}</span>) : <span className="muted">Sem responsável</span>}</dd></div>
-        {d.points != null && <div><dt>Pontos</dt><dd>{d.points}</dd></div>}
-        {d.dueDate && <div><dt>Prazo</dt><dd>{day(d.dueDate)}</dd></div>}
-        {d.owner && <div><dt>Criado por</dt><dd>{d.owner.name}</dd></div>}
-        <div><dt>Criado em</dt><dd>{dt(d.created)}</dd></div>
-        <div><dt>Atualizado em</dt><dd>{dt(d.modified)}</dd></div>
-        {d.finished && <div><dt>Concluído em</dt><dd>{dt(d.finished)}</dd></div>}
-      </dl>
-
-      <div className={`modal-cols${d.children.length || d.comments.length ? "" : " single"}`}>
-        <div>
-      <h4 className="sec">Descrição</h4>
-      {d.description.trim() ? <p className="desc">{d.description}</p> : <p className="muted">Sem descrição.</p>}
-
+      <header className="m-head">
+        <div className="m-title">
+          <p className="muted">{d.kind === "us" ? "User story" : "Task"} #{d.ref}{d.parent && <> · story #{d.parent.ref} — {d.parent.subject}</>}</p>
+          <h3 className="modal-t">{d.subject}</h3>
         </div>
-        <div>
-      {d.children.length > 0 && (<>
-        <h4 className="sec">Tasks da story <span className="count">{d.children.length}</span></h4>
-        <ul className="items">{d.children.map((t) => (
-          <li key={t.ref} className={t.closed ? "done" : ""}>
-            <span className="ref">#{t.ref}</span><span className="subj">{t.subject}</span>
-            <span className="chip" style={{ ["--c" as string]: t.color }}><i />{t.status}</span>
-            <span className="meta">{t.assignee ?? "—"}</span>
-          </li>))}</ul>
-      </>)}
-
-      {d.comments.length > 0 && (<>
-        <h4 className="sec">Comentários <span className="count">{d.comments.length}</span></h4>
-        <ul className="cmts">{d.comments.map((c, i) => (
-          <li key={i}><Picture name={c.user} src={c.photo} size={28} />
-            <div><b>{c.user}</b> <span className="muted">{dt(c.date)}</span><p>{c.text}</p></div></li>))}</ul>
-      </>)}
-
+        <div className="m-actions">
+          {href && <a className="btn-link" href={href} target="_blank" rel="noopener noreferrer">Abrir no Taiga ↗</a>}
+          <button className="modal-x ghost" onClick={onClose} aria-label="Fechar">✕</button>
         </div>
-      </div>
+      </header>
 
-      {href && <p className="modal-foot"><a href={href} target="_blank" rel="noopener noreferrer">Abrir no Taiga ↗</a></p>}
+      <div className="m-grid">
+        <div className="m-main">
+          <div className="modal-badges">
+            {d.status && <span className="chip" style={{ ["--c" as string]: d.status.color }}><i />{d.status.name}</span>}
+            {d.blocked && <span className="chip" style={{ ["--c" as string]: "#e5484d" }}><i />Bloqueado</span>}
+            {d.tags.map((t) => <span key={t.name} className="tag" style={t.color ? { ["--c" as string]: t.color } : undefined}>{t.name}</span>)}
+          </div>
+          {d.blocked && <p className="alert">Motivo do bloqueio: {d.blocked}</p>}
+
+          <h4 className="sec">Descrição</h4>
+          {d.description.trim() ? <Md text={d.description} /> : <p className="muted">Sem descrição.</p>}
+
+          {d.comments.length > 0 && (<>
+            <h4 className="sec">Comentários <span className="count">{d.comments.length}</span></h4>
+            <ul className="cmts">{d.comments.map((c, i) => (
+              <li key={i}><Picture name={pretty(c.user)} src={c.photo} size={30} />
+                <div><b>{pretty(c.user)}</b> <span className="muted">{dt(c.date)}</span><Md text={c.text} /></div></li>))}</ul>
+          </>)}
+        </div>
+
+        <aside className="m-side">
+          <h4 className="sec">Detalhes</h4>
+          <dl className="kv">
+            <div><dt>Responsável</dt><dd>{d.assignees.length
+              ? d.assignees.map((a) => <span key={a.name} className="who-i"><Picture name={pretty(a.name)} src={a.photo} size={22} />{pretty(a.name)}</span>)
+              : <span className="muted">Sem responsável</span>}</dd></div>
+            {d.points != null && <div><dt>Pontos</dt><dd>{d.points}</dd></div>}
+            {d.dueDate && <div><dt>Prazo</dt><dd>{day(d.dueDate)}</dd></div>}
+            {d.owner && <div><dt>Criado por</dt><dd>{pretty(d.owner.name)}</dd></div>}
+            <div><dt>Criado em</dt><dd>{dt(d.created)}</dd></div>
+            <div><dt>Atualizado em</dt><dd>{dt(d.modified)}</dd></div>
+            {d.finished && <div><dt>Concluído em</dt><dd>{dt(d.finished)}</dd></div>}
+          </dl>
+
+          {d.children.length > 0 && (<>
+            <h4 className="sec">Tasks <span className="count">{done}/{d.children.length}</span></h4>
+            <div className="mini-bar"><span style={{ width: `${(done / d.children.length) * 100}%` }} /></div>
+            <ul className="trows">{d.children.map((t) => (
+              <li key={t.ref} className={t.closed ? "done" : ""}>
+                <span className="tick" aria-hidden="true">{t.closed ? "✓" : ""}</span>
+                <div className="tbody">
+                  <span className="tsubj"><span className="ref">#{t.ref}</span> {t.subject}</span>
+                  <span className="tmeta">
+                    <span className="chip" style={{ ["--c" as string]: t.color }}><i />{t.status}</span>
+                    {t.assignee && <span className="who-i" title={pretty(t.assignee)}><Picture name={pretty(t.assignee)} src={t.assigneePhoto} size={18} />{first(t.assignee)}</span>}
+                  </span>
+                </div>
+              </li>))}</ul>
+          </>)}
+        </aside>
+      </div>
     </>
   );
 }
@@ -98,7 +121,8 @@ export function ItemButton({ kind, id, project, href, children }: { kind: "us" |
   return (
     <>
       <button type="button" className="linkbtn" onClick={() => setOpen(true)}>{children}</button>
-      {open && <Dialog kind={kind} id={id} project={project} href={href} onClose={() => setOpen(false)} />}
+      {/* no body: o modal não herda o estilo da lista onde o botão está */}
+      {open && createPortal(<Dialog kind={kind} id={id} project={project} href={href} onClose={() => setOpen(false)} />, document.body)}
     </>
   );
 }

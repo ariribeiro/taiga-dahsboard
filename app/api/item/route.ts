@@ -61,7 +61,7 @@ export async function GET(req: Request) {
       parent: kind === "task" && it.user_story_extra_info ? { ref: it.user_story_extra_info.ref, subject: it.user_story_extra_info.subject } : null,
       children: children.map((t) => ({
         ref: t.ref, subject: t.subject, status: t.status_extra_info?.name ?? "", color: t.status_extra_info?.color ?? "#999",
-        closed: !!t.is_closed, assignee: nm(t.assigned_to_extra_info),
+        closed: !!t.is_closed, assignee: nm(t.assigned_to_extra_info), assigneePhoto: t.assigned_to_extra_info?.photo ?? null,
       })),
       comments,
     };

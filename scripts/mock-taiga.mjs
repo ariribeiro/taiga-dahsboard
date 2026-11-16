@@ -24,6 +24,10 @@ const tasks = [
   { id: 3, ref: 203, subject: "Revisar SSO", user_story: 1, assigned_to: 1, status_extra_info: DONE, is_closed: true },
   { id: 5, ref: 205, subject: "Ajuste legado", user_story: 3, assigned_to: 190, assigned_to_extra_info: { id: 190, full_name_display: "Diego Antigo" }, status_extra_info: NEW, is_closed: false },
   { id: 6, ref: 206, subject: "Doc API", user_story: 3, assigned_to: 233, status_extra_info: NEW, is_closed: false },
+  { id: 20, ref: 300, subject: "PDDE-00 — Spike token Olinda + secrets", user_story: 2, assigned_to: 3, assigned_to_extra_info: { id: 3, full_name_display: "CARLA DIAS DA SILVA" }, status_extra_info: DOING, is_closed: false },
+  { id: 21, ref: 301, subject: "PDDE-01 — Cliente HTTP Olinda + DTOs", user_story: 2, assigned_to: 3, assigned_to_extra_info: { id: 3, full_name_display: "CARLA DIAS DA SILVA" }, status_extra_info: DONE, is_closed: true },
+  { id: 22, ref: 302, subject: "403-T1 — Endpoint interno consulta diretor por CPF", user_story: 2, assigned_to: 3, assigned_to_extra_info: { id: 3, full_name_display: "CARLA DIAS DA SILVA" }, status_extra_info: DOING, is_closed: false },
+  { id: 23, ref: 303, subject: "403-T2 — Persistência / sincronização (confirmar)", user_story: 2, assigned_to: 3, assigned_to_extra_info: { id: 3, full_name_display: "CARLA DIAS DA SILVA" }, status_extra_info: DONE, is_closed: true },
   { id: 4, ref: 204, subject: "Teste de carga", user_story: 3, assigned_to: 1, status_extra_info: NEW, is_closed: false },
 ];
 const send = (res, code, body) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(body)); };
@@ -55,7 +59,7 @@ http.createServer((req, res) => {
   let m;
   if ((m = p.match(/^\/userstories\/(\d+)$/))) {
     const st = stories.find((x) => x.id === +m[1]); if (!st) return send(res, 404, {});
-    return send(res, 200, { ...st, project: 1, description: "Como gestor, quero ver o progresso por dev.\n\nCritérios:\n- filtro por sprint\n- exportar PDF", tags: [["frontend", "#5b5bf0"], ["relatorios", null]],
+    return send(res, 200, { ...st, project: 1, description: "**PNLD–HU001: Integração com API**\n\n## COMO\nSistema PNLD\n\n## QUERO\nConsumir a API `PDDE_INTERATIVO` via [APIGateway](https://exemplo.com/gateway), usando o CPF do gestor.\n\n## Critérios\n- [x] filtro por sprint\n- [ ] exportar PDF\n- Item **importante**\n\n| Campo | Tipo |\n|---|---|\n| cpf | string |\n\n> Atenção ao timeout\n\n```json\n{\"ok\": true}\n```", tags: [["frontend", "#5b5bf0"], ["relatorios", null]],
       due_date: iso(5), created_date: iso(-20) + "T10:00:00Z", modified_date: iso(-1) + "T15:30:00Z", is_blocked: st.id === 2, blocked_note: "Aguardando API de dados",
       owner_extra_info: { full_name_display: "Ana Souza", photo: null }, assigned_to_extra_info: st.assigned_to ? { id: st.assigned_to, full_name_display: "Ana Souza" } : null });
   }
@@ -64,7 +68,7 @@ http.createServer((req, res) => {
     return send(res, 200, { ...t, project: 1, description: "", tags: [], created_date: iso(-6) + "T09:00:00Z", modified_date: iso(-2) + "T11:00:00Z",
       user_story_extra_info: { ref: stories.find((x) => x.id === t.user_story)?.ref, subject: stories.find((x) => x.id === t.user_story)?.subject } });
   }
-  if (p.startsWith("/history/")) return send(res, 200, [{ id: "a", user: { name: "Bruno Lima", photo: null }, created_at: iso(-3) + "T14:00:00Z", comment: "Subi o protótipo no Figma.\nPreciso de revisão." }, { id: "b", user: { name: "Carla Dias" }, created_at: iso(-2) + "T09:10:00Z", comment: "" }]);
+  if (p.startsWith("/history/")) return send(res, 200, [{ id: "a", user: { name: "Bruno Lima", photo: null }, created_at: iso(-3) + "T14:00:00Z", comment: "Subi o **protótipo** no Figma.\nPreciso de revisão — veja [aqui](https://exemplo.com)." }, { id: "b", user: { name: "Carla Dias" }, created_at: iso(-2) + "T09:10:00Z", comment: "" }]);
   if (p === "/userstories") return send(res, 200, stories);
   if (p === "/tasks") { const us = u.searchParams.get("user_story"); return send(res, 200, us ? tasks.filter((t) => t.user_story === +us) : tasks); }
   send(res, 404, {});

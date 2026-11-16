@@ -12,6 +12,6 @@ export type ItemDetail = {
   description: string;
   tags: { name: string; color: string | null }[];
   parent: { ref: number; subject: string } | null; // task -> story
-  children: { ref: number; subject: string; status: string; color: string; closed: boolean; assignee: string | null }[]; // story -> tasks
+  children: { ref: number; subject: string; status: string; color: string; closed: boolean; assignee: string | null; assigneePhoto: string | null }[]; // story -> tasks
   comments: { user: string; photo: string | null; date: string; text: string }[];
 };
