@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getProjects, TaigaError } from "@/lib/taiga";
 import { Header } from "../header";
-import { Picture } from "../ui";
+import { ProjectList } from "../project-list";
 
 export const dynamic = "force-dynamic";
 
@@ -22,17 +21,8 @@ export default async function Projects() {
       <Header name={cur.session.fullName} />
       <main className="wrap">
         <div className="page-title"><h2>Seus projetos</h2><span className="muted">{projects.length} projeto(s)</span></div>
-        <div className="grid">
-          {projects.map((p) => (
-            <Link key={p.id} href={`/projects/${p.id}`} className="card proj">
-              <Picture name={p.name} src={p.logo_small_url} size={46} square />
-              <strong>{p.name}</strong>
-              <span className="muted">{p.description?.slice(0, 110) || "Sem descrição"}</span>
-              <span className="proj-go">Ver sprint →</span>
-            </Link>
-          ))}
-          {!projects.length && <p className="muted">Você não participa de nenhum projeto.</p>}
-        </div>
+        <ProjectList userId={cur.session.userId}
+          projects={projects.map((p) => ({ id: p.id, name: p.name, description: p.description ?? "", logo: p.logo_small_url ?? null }))} />
       </main>
     </>
   );

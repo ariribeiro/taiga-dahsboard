@@ -250,3 +250,15 @@ button.ghost:hover{background:var(--soft);transform:none}
 .help-body code{background:var(--soft);padding:1px 6px;border-radius:6px;font-size:.88em;overflow-wrap:anywhere}
 .help-t{border-collapse:collapse;width:100%;margin:8px 0;font-size:14px}.help-t td{padding:7px 8px;border-top:1px solid var(--line);vertical-align:middle}.help-t tr:first-child td{border-top:0}.help-t td:first-child{white-space:nowrap;width:1%}
 .help-now{margin-top:10px!important;padding:10px 12px;border-radius:10px;background:var(--soft)}
+
+/* favoritos na lista de projetos */
+.pl:not(.ready){visibility:hidden}
+.pcard{position:relative;margin:0;padding:0;transition:.18s}
+.pcard:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 12px 30px -14px color-mix(in srgb,var(--accent) 50%,transparent)}
+.pcard .proj-link{display:flex;flex-direction:column;gap:8px;padding:20px;height:100%;border-radius:var(--r)}
+.pcard .proj-link strong{font-size:17px;padding-right:34px}
+.pcard.fav{border-color:color-mix(in srgb,#f5b301 45%,var(--line))}
+.star{position:absolute;top:12px;right:12px;width:32px;height:32px;padding:0;border-radius:50%;background:transparent;color:var(--muted);font-size:20px;line-height:1;display:grid;place-items:center;cursor:pointer;opacity:.7}
+.star:hover{background:var(--soft);color:#f5b301;opacity:1;transform:none;filter:none}
+.star.on{color:#f5b301;opacity:1}
+.fav-h{margin:22px 0 10px}.fav-h:first-child{margin-top:6px}.fav-star{color:#f5b301}
