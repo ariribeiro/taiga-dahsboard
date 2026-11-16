@@ -20,3 +20,11 @@ O terminal onde roda `npm run dev` mostra a causa real (`[login] ...`).
 - `CONFIG`: `.env.local` ausente/sem `TAIGA_URL` (o arquivo precisa se chamar exatamente `.env.local`; reinicie após criar).
 - `CERT`: certificado interno → `NODE_EXTRA_CA_CERTS=caminho\\cert.pem` (CMD: `set NODE_EXTRA_CA_CERTS=...` antes do `npm run dev`).
 - `CRED`: o Taiga recusou usuário/senha (contas via GitHub/Google/LDAP precisam de senha própria ou tipo de login diferente).
+
+## Links para o Taiga (↗)
+Para abrir stories e tasks no próprio Taiga, defina em `.env.local` o endereço do **site** do Taiga (o que você abre no navegador), que costuma ser diferente da API:
+```
+TAIGA_URL=https://taiga-api.suaempresa.com      # API
+TAIGA_WEB_URL=https://taiga.suaempresa.com      # site (sem /project/... no final)
+```
+Os links seguem o padrão `TAIGA_WEB_URL/project/<slug>/us/<ref>` (story) e `/task/<ref>` (task). Sem `TAIGA_WEB_URL`, os links ficam ocultos.

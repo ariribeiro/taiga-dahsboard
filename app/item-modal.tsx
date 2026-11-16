@@ -5,6 +5,7 @@ import type { ItemDetail } from "@/lib/item";
 import { Picture } from "./picture";
 import { Md } from "./markdown";
 import { Lightbox } from "./lightbox";
+import { ExtLink } from "./ui";
 
 // Nomes vindos TODO EM MAIÚSCULAS ficam em formato de nome próprio.
 const pretty = (n: string) => (n && n === n.toUpperCase() ? n.toLowerCase().replace(/(^|\s)(\S)/g, (_, a, b) => a + b.toUpperCase()).replace(/\b(Da|De|Do|Das|Dos|E)\b/g, (m) => m.toLowerCase()) : n);
@@ -65,11 +66,11 @@ function Body({ d, href, onClose }: { d: ItemDetail; href: string | null; onClos
     <>
       <header className="m-head">
         <div className="m-title">
-          <p className="muted">{d.kind === "us" ? "User story" : "Task"} #{d.ref}{d.parent && <> · story #{d.parent.ref} — {d.parent.subject}</>}</p>
+          <p className="muted">{d.kind === "us" ? "User story" : "Task"} #{d.ref}{d.parent && <> · story #{d.parent.ref} — {d.parent.subject} <ExtLink href={d.parent.webUrl} what={`story #${d.parent.ref}`} /></>}</p>
           <h3 className="modal-t">{d.subject}</h3>
         </div>
         <div className="m-actions">
-          {href && <a className="btn-link" href={href} target="_blank" rel="noopener noreferrer">Abrir no Taiga ↗</a>}
+          {(d.webUrl ?? href) && <a className="btn-link" href={(d.webUrl ?? href) as string} target="_blank" rel="noopener noreferrer">Abrir no Taiga ↗</a>}
           <button className="modal-x ghost" onClick={onClose} aria-label="Fechar">✕</button>
         </div>
       </header>
@@ -127,7 +128,7 @@ function Body({ d, href, onClose }: { d: ItemDetail; href: string | null; onClos
               <li key={t.ref} className={t.closed ? "done" : ""}>
                 <span className="tick" aria-hidden="true">{t.closed ? "✓" : ""}</span>
                 <div className="tbody">
-                  <span className="tsubj"><span className="ref">#{t.ref}</span> {t.subject}</span>
+                  <span className="tsubj"><span className="ref">#{t.ref}</span> {t.subject} <ExtLink href={t.webUrl} what={`task #${t.ref}`} /></span>
                   <span className="tmeta">
                     <span className="chip" style={{ ["--c" as string]: t.color }}><i />{t.status}</span>
                     {t.assignee && <span className="who-i" title={pretty(t.assignee)}><Picture name={pretty(t.assignee)} src={t.assigneePhoto} size={18} />{first(t.assignee)}</span>}

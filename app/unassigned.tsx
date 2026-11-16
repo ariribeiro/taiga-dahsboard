@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ItemButton } from "./item-modal";
+import { ExtLink } from "./ui";
 
 type Row = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; points?: number; storyRef?: number | null; href: string | null };
 
@@ -14,7 +15,7 @@ function List({ title, kind, rows, project }: { title: string; kind: "us" | "tas
         {rows.map((r) => (
           <li key={r.id} className={r.closed ? "done" : ""}>
             <span className="ref">#{r.ref}</span>
-            <span className="subj"><ItemButton kind={kind} id={r.id} project={project} href={r.href}>{r.subject}</ItemButton></span>
+            <span className="subj"><ItemButton kind={kind} id={r.id} project={project} href={r.href}>{r.subject}</ItemButton> <ExtLink href={r.href} what={`${kind === "us" ? "story" : "task"} #${r.ref}`} /></span>
             <span className="chip" style={{ ["--c" as string]: r.color }}><i />{r.status}</span>
             <span className="meta">{kind === "us" ? `${r.points ?? 0} pts` : r.storyRef ? `story #${r.storyRef}` : ""}</span>
           </li>

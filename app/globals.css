@@ -262,3 +262,7 @@ button.ghost:hover{background:var(--soft);transform:none}
 .star:hover{background:var(--soft);color:#f5b301;opacity:1;transform:none;filter:none}
 .star.on{color:#f5b301;opacity:1}
 .fav-h{margin:22px 0 10px}.fav-h:first-child{margin-top:6px}.fav-star{color:#f5b301}
+
+/* link para o Taiga */
+.ext{display:inline-block;margin-left:2px;padding:0 5px;border-radius:6px;color:var(--muted);font-size:13px;line-height:1.5;text-decoration:none;opacity:.75}
+.ext:hover{color:var(--accent);background:var(--soft);opacity:1}

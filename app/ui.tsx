@@ -44,3 +44,7 @@ export const Logo = () => (
 export { SprintPicker } from "./sprint-picker";
 
 export const fmtDate = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+
+/** Link “↗” para abrir a story/task no Taiga (não aparece se TAIGA_WEB_URL não estiver configurada). */
+export const ExtLink = ({ href, what = "item" }: { href: string | null | undefined; what?: string }) =>
+  href ? <a className="ext" href={href} target="_blank" rel="noopener noreferrer" title="Abrir no Taiga" aria-label={`Abrir ${what} no Taiga`}>↗</a> : null;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getMembers, getUser, taigaGet, TaigaError, TAIGA_URL } from "@/lib/taiga";
 import type { ItemDetail } from "@/lib/item";
+import { taigaWebLink } from "@/lib/links";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const dynamic = "force-dynamic";
@@ -64,6 +65,7 @@ export async function GET(req: Request) {
       isImage: IMG.test(String(a.name ?? "")) || IMG.test(String(a.attached_file ?? "")), description: String(a.description ?? ""),
     })).filter((a) => a.url);
 
+    const slug: string | undefined = it.project_extra_info?.slug;
     const out: ItemDetail = {
       kind, id, ref: it.ref, subject: it.subject,
       status: it.status_extra_info ? { name: it.status_extra_info.name, color: it.status_extra_info.color } : null,
@@ -74,11 +76,13 @@ export async function GET(req: Request) {
       dueDate: it.due_date ?? null,
       created: it.created_date ?? null, modified: it.modified_date ?? null, finished: it.finish_date ?? it.finished_date ?? null,
       description: String(it.description ?? ""),
+      webUrl: taigaWebLink(slug, kind, it.ref),
       tags,
-      parent: kind === "task" && it.user_story_extra_info ? { ref: it.user_story_extra_info.ref, subject: it.user_story_extra_info.subject } : null,
+      parent: kind === "task" && it.user_story_extra_info ? { ref: it.user_story_extra_info.ref, subject: it.user_story_extra_info.subject, webUrl: taigaWebLink(slug, "us", it.user_story_extra_info.ref) } : null,
       children: children.map((t) => ({
         ref: t.ref, subject: t.subject, status: t.status_extra_info?.name ?? "", color: t.status_extra_info?.color ?? "#999",
         closed: !!t.is_closed, assignee: nm(t.assigned_to_extra_info), assigneePhoto: t.assigned_to_extra_info?.photo ?? null,
+        webUrl: taigaWebLink(slug, "task", t.ref),
       })),
       baseUrl: TAIGA_URL, attachments, comments,
     };

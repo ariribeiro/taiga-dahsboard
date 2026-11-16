@@ -3,9 +3,10 @@ import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { TaigaError } from "@/lib/taiga";
 import { loadSprint } from "@/lib/sprint";
+import { taigaWebLink } from "@/lib/links";
 import { ItemButton } from "../../../../item-modal";
 import { Header } from "../../../../header";
-import { Avatar, Bar, Chip, Kpi, Ring, SprintPicker, fmtDate } from "../../../../ui";
+import { Avatar, Bar, Chip, ExtLink, Kpi, Ring, SprintPicker, fmtDate } from "../../../../ui";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ function Group({ title, items, kind, project, webLink }: { title: string; items:
           <ul className="items">
             {g.items.map((i) => (
               <li key={i.id} className={i.closed ? "done" : ""}>
-                <span className="ref">#{i.ref}</span><span className="subj"><ItemButton kind={kind} id={i.id} project={project} href={webLink(kind, i.ref)}>{i.subject}</ItemButton></span>
+                <span className="ref">#{i.ref}</span><span className="subj"><ItemButton kind={kind} id={i.id} project={project} href={webLink(kind, i.ref)}>{i.subject}</ItemButton> <ExtLink href={webLink(kind, i.ref)} what={`${kind === "us" ? "story" : "task"} #${i.ref}`} /></span>
                 {i.blocked && !i.closed && !i.blocked.startsWith("Status:") && <span className="chip" style={{ ["--c" as string]: "#e5484d" }} title={i.blocked}><i />Bloqueada</span>}<span className="meta">{i.extra}</span>
               </li>
             ))}
@@ -62,9 +63,8 @@ export default async function DevPage({ params, searchParams }: { params: { id: 
     const storiesOwned = dev.stories.filter((s) => s.role === "responsável");
     const storiesVia = dev.stories.filter((s) => s.role === "via task");
     const toItem = (x: { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; blocked: string | null }, extra: string): Item => ({ id: x.id, ref: x.ref, subject: x.subject, status: x.status, color: x.color, closed: x.closed, blocked: x.blocked, extra });
-    // Link opcional para abrir no Taiga (precisa de TAIGA_WEB_URL = endereço do frontend do Taiga)
-    const web = (process.env.TAIGA_WEB_URL ?? "").replace(/\/+$/, "");
-    const webLink = (kind: "us" | "task", ref: number) => (web ? `${web}/project/${project.slug}/${kind === "us" ? "us" : "task"}/${ref}` : null);
+    // Link para abrir no Taiga (precisa de TAIGA_WEB_URL = endereço do site do Taiga)
+    const webLink = (kind: "us" | "task", ref: number) => taigaWebLink(project.slug, kind, ref);
     const idle = !dev.stories.length && !dev.tasks.length;
 
     return shell(<>
