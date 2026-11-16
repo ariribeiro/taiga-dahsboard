@@ -34,13 +34,13 @@ export function pickCurrentSprint(ms: TMilestone[]): TMilestone | null {
   );
 }
 
-export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[], sprint: TMilestone, known: Map<number, string> = new Map()) {
+export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[], sprint: TMilestone, known: Map<number, { name: string; photo: string | null }> = new Map()) {
   const devs = new Map<number, DevView>();
   const ensure = (id: number, name?: string) => {
     let d = devs.get(id);
     if (!d) {
       const m = members.find((x) => x.user === id);
-      d = { userId: id, name: m?.full_name ?? known.get(id) ?? name ?? `Usuário ${id}`, photo: m?.photo ?? null, role: m ? m.role_name : "Fora do projeto",
+      d = { userId: id, name: m?.full_name ?? known.get(id)?.name ?? name ?? `Usuário ${id}`, photo: m?.photo ?? known.get(id)?.photo ?? null, role: m ? m.role_name : "Fora do projeto",
         stories: [], tasks: [], points: 0, closedPoints: 0, tasksDone: 0, progress: 0, basis: "tasks", open: 0 };
       devs.set(id, d);
     }

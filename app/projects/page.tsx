@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getProjects, TaigaError } from "@/lib/taiga";
 import { Header } from "../header";
-import { colorFor, initials } from "../ui";
+import { Picture } from "../ui";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,7 @@ export default async function Projects() {
         <div className="grid">
           {projects.map((p) => (
             <Link key={p.id} href={`/projects/${p.id}`} className="card proj">
-              <span className="proj-ico" style={{ background: colorFor(p.name) }}>{initials(p.name)}</span>
+              <Picture name={p.name} src={p.logo_small_url} size={46} square />
               <strong>{p.name}</strong>
               <span className="muted">{p.description?.slice(0, 110) || "Sem descrição"}</span>
               <span className="proj-go">Ver sprint →</span>

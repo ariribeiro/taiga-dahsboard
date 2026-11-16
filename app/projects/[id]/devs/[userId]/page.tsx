@@ -66,7 +66,7 @@ export default async function DevPage({ params, searchParams }: { params: { id: 
       <Link href={back} className="back">← {project.name} · {sprint.name}</Link>
       <div className="page-title">
         <div className="dev-head">
-          <Avatar name={dev.name} size={56} />
+          <Avatar name={dev.name} src={dev.photo} size={56} />
           <div><h2>{dev.name}</h2><span className="muted">{dev.role || "Time"} · {sprint.name} ({fmtDate(sprint.estimated_start)} → {fmtDate(sprint.estimated_finish)})</span></div>
         </div>
         <SprintPicker sprints={sorted} current={sprint.id} />

@@ -1,16 +1,12 @@
 import type { ReactNode } from "react";
 
-const PALETTE = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#f43f5e"];
-export const colorFor = (s: string) => PALETTE[[...s].reduce((n, c) => n + c.charCodeAt(0), 0) % PALETTE.length];
-export const initials = (n: string) => n.split(" ").filter(Boolean).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+import { colorFor, initials } from "@/lib/colors";
+import { Picture } from "./picture";
+export { colorFor, initials, Picture };
 
-export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
-  return (
-    <span className="avatar" style={{ width: size, height: size, fontSize: size * 0.38, background: colorFor(name) }}>
-      {initials(name)}
-    </span>
-  );
-}
+export const Avatar = ({ name, src, size = 40 }: { name: string; src?: string | null; size?: number }) => (
+  <Picture name={name} src={src} size={size} />
+);
 
 export function Ring({ value, size = 96, stroke = 10, label, title }: { value: number; size?: number; stroke?: number; label?: string; title?: string }) {
   const r = (size - stroke) / 2, c = 2 * Math.PI * r, v = Math.min(Math.max(value, 0), 100);

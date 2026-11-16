@@ -5,8 +5,8 @@ const d = new Date(), iso = (n) => new Date(d.getTime() + n * 864e5).toISOString
 const st = (name, color) => ({ name, color });
 const NEW = st("Novo", "#999"), DOING = st("Em andamento", "#e6a700"), DONE = st("Pronto", "#1f9d6b");
 const members = [
-  { user: 1, full_name: "Ana Souza", photo: null, role_name: "Back", is_active: true },
-  { user: 2, full_name: "Bruno Lima", photo: null, role_name: "Front", is_active: true },
+  { user: 1, full_name: "Ana Souza", photo: "http://localhost:9000/media/ana.svg", role_name: "Back", is_active: true },
+  { user: 2, full_name: "Bruno Lima", photo: "http://localhost:9000/media/quebrada.png", role_name: "Front", is_active: true },
   { user: 3, full_name: "Carla Dias", photo: null, role_name: "Back", is_active: true },
 ];
 const milestones = [
@@ -28,18 +28,24 @@ const tasks = [
 ];
 const send = (res, code, body) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(body)); };
 http.createServer((req, res) => {
+  if (req.url.startsWith("/media/")) {
+    if (req.url.includes("quebrada")) { res.writeHead(404); return res.end(); }
+    const c = req.url.includes("logo") ? "#f59e0b" : "#0ea5e9";
+    res.writeHead(200, { "Content-Type": "image/svg+xml" });
+    return res.end(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" fill="${c}"/><circle cx="20" cy="16" r="7" fill="#fff"/><rect x="8" y="26" width="24" height="10" rx="5" fill="#fff"/></svg>`);
+  }
   const u = new URL(req.url, "http://x"); const p = u.pathname.replace("/api/v1", "");
   if (p === "/auth") {
     let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => {
       const { username, password } = JSON.parse(b || "{}");
       if (password !== "senha") return send(res, 401, { _error_message: "invalid" });
-      send(res, 200, { id: 1, username, full_name_display: "Ana Souza", auth_token: "tok", refresh: "ref", photo: null });
+      send(res, 200, { id: 1, username, full_name_display: "Ana Souza", auth_token: "tok", refresh: "ref", photo: "http://localhost:9000/media/ana.svg" });
     }); return;
   }
   if (req.headers.authorization !== "Bearer tok") return send(res, 401, {});
-  if (p === "/projects") return send(res, 200, [{ id: 1, name: "Projeto Alfa", slug: "alfa", description: "Produto principal" }, { id: 2, name: "Projeto Beta", slug: "beta", description: "" }]);
+  if (p === "/projects") return send(res, 200, [{ id: 1, name: "Projeto Alfa", slug: "alfa", description: "Produto principal", logo_small_url: "http://localhost:9000/media/logo.svg" }, { id: 2, name: "Projeto Beta", slug: "beta", description: "" }]);
   if (p === "/users/233") return send(res, 200, { id: 233, username: "paula", full_name_display: "Paula Externa" });
-  if (p === "/projects/1") return send(res, 200, { id: 1, name: "Projeto Alfa", slug: "alfa" });
+  if (p === "/projects/1") return send(res, 200, { id: 1, name: "Projeto Alfa", slug: "alfa", logo_small_url: "http://localhost:9000/media/logo.svg" });
   if (p === "/memberships") return send(res, 200, members);
   if (p === "/milestones") return send(res, 200, milestones);
   if (p === "/userstories") return send(res, 200, stories);

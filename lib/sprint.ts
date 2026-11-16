@@ -11,18 +11,18 @@ export async function loadSprint(pid: number, sprintParam?: string) {
 
   // Quem tem item atribuído mas não está (mais) na lista de membros: descobre o nome
   // pelo extra_info das próprias stories/tasks e, se faltar, por GET /users/{id}.
-  const known = new Map<number, string>();
+  const known = new Map<number, { name: string; photo: string | null }>();
   for (const x of [...stories, ...tasks]) {
     const u = x.assigned_to_extra_info;
     const n = u?.full_name_display || u?.full_name || u?.username;
-    if (x.assigned_to && n) known.set(x.assigned_to, n);
+    if (x.assigned_to && n) known.set(x.assigned_to, { name: n, photo: u?.photo ?? null });
   }
   const ids = new Set<number>();
   for (const s of stories) [...(s.assigned_users ?? []), s.assigned_to].forEach((i) => i && ids.add(i));
   for (const t of tasks) t.assigned_to && ids.add(t.assigned_to);
   const missing = [...ids].filter((i) => !known.has(i) && !members.some((m) => m.user === i));
   await Promise.all(missing.map(async (i) => {
-    try { const u = await getUser(i); const n = u.full_name_display || u.full_name || u.username; if (n) known.set(i, n); } catch { /* sem permissão: mantém o fallback */ }
+    try { const u = await getUser(i); const n = u.full_name_display || u.full_name || u.username; if (n) known.set(i, { name: n, photo: u.photo ?? null }); } catch { /* sem permissão: mantém o fallback */ }
   }));
 
   const { devs, overview } = buildViews(members, stories, tasks, sprint, known);

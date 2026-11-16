@@ -4,7 +4,7 @@ import { getSession } from "@/lib/session";
 import { TaigaError } from "@/lib/taiga";
 import { loadSprint } from "@/lib/sprint";
 import { Header } from "../../header";
-import { Avatar, Bar, Kpi, Ring, SprintPicker, fmtDate as fmt } from "../../ui";
+import { Avatar, Bar, Kpi, Picture, Ring, SprintPicker, fmtDate as fmt } from "../../ui";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +32,7 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
         <main className="wrap">
           <Link href="/projects" className="back">← Projetos</Link>
           <div className="page-title">
-            <h2>{project.name}</h2>
+            <div className="dev-head"><Picture name={project.name} src={project.logo_small_url} size={44} square /><h2>{project.name}</h2></div>
             <SprintPicker sprints={sorted} current={sprint.id} />
           </div>
 
@@ -79,7 +79,7 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
               return (
                 <Link key={d.userId} href={`/projects/${pid}/devs/${d.userId}?sprint=${sprint.id}`} className={`card devcard${idle ? " idle" : ""}`}>
                   <div className="dc-top">
-                    <Avatar name={d.name} size={46} />
+                    <Avatar name={d.name} src={d.photo} size={46} />
                     <span className="who"><strong>{d.name}</strong><span className="muted">{d.role || "Time"}</span></span>
                     <Ring value={d.progress} size={54} stroke={6} title={`Progresso baseado em ${d.basis}`} />
                   </div>
