@@ -92,6 +92,15 @@ export type TTask = {
 
 export const getProjects = (userId: number) =>
   taigaGet<TProject[]>(`/projects?member=${userId}&order_by=memberships__user_order`);
+const projCache = ((globalThis as unknown as { __projCache?: Map<number, { at: number; data: TProject[] }> }).__projCache ??= new Map());
+/** Lista de projetos com cache de 5 min — usada no seletor do cabeçalho, que aparece em toda página. */
+export async function getProjectsCached(userId: number): Promise<TProject[]> {
+  const hit = projCache.get(userId);
+  if (hit && Date.now() - hit.at < 300_000) return hit.data;
+  const data = await getProjects(userId);
+  projCache.set(userId, { at: Date.now(), data });
+  return data;
+}
 export const getProject = (id: number) => taigaGet<TProject>(`/projects/${id}`);
 export const getMembers = (p: number) => taigaGet<TMember[]>(`/memberships?project=${p}`);
 export const getMilestones = (p: number) => taigaGet<TMilestone[]>(`/milestones?project=${p}`);

@@ -48,9 +48,10 @@ http.createServer((req, res) => {
     }); return;
   }
   if (req.headers.authorization !== "Bearer tok") return send(res, 401, {});
-  if (p === "/projects") return send(res, 200, [{ id: 1, name: "Projeto Alfa", slug: "alfa", description: "Produto principal", logo_small_url: "http://localhost:9000/media/logo.svg" }, { id: 2, name: "Projeto Beta", slug: "beta", description: "" }]);
+  const PROJ = ["Projeto Alfa", "Projeto Beta", "Portal do Aluno", "PNLD Distribuição", "App Mobile", "Data Lake", "Sistema Legado", "Painel Executivo", "Integração MEC"].map((name, i) => ({ id: i + 1, name, slug: name.toLowerCase().replace(/\W+/g, "-"), description: i === 0 ? "Produto principal" : "", logo_small_url: i === 0 ? "http://localhost:9000/media/logo.svg" : null }));
+  if (p === "/projects") return send(res, 200, PROJ);
+  { const pm = p.match(/^\/projects\/(\d+)$/); if (pm) { const pr = PROJ.find((x) => x.id === +pm[1]); return pr ? send(res, 200, pr) : send(res, 404, {}); } }
   if (p === "/users/233") return send(res, 200, { id: 233, username: "paula", full_name_display: "Paula Externa" });
-  if (p === "/projects/1") return send(res, 200, { id: 1, name: "Projeto Alfa", slug: "alfa", logo_small_url: "http://localhost:9000/media/logo.svg" });
   if (p === "/milestones/10/stats") {
     const total = 16, n = 14, open = [16,16,15,15,13,13,11,11]; // 8 dias já decorridos (hoje = índice 7)
     return send(res, 200, { days: Array.from({ length: n }, (_, i) => ({ day: iso(-7 + i), name: i + 1, open_points: i < 8 ? open[i] : null, optimal_points: Math.round(total * (1 - i / (n - 1)) * 10) / 10 })) });
