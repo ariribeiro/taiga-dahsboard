@@ -16,6 +16,7 @@ const milestones = [
 const stories = [
   { id: 1, ref: 101, subject: "Login SSO", assigned_to: 1, assigned_users: [1], status_extra_info: DONE, is_closed: true, total_points: 5 },
   { id: 2, ref: 102, subject: "Tela de relatórios", assigned_to: 2, assigned_users: [2, 3], status_extra_info: DOING, is_closed: false, total_points: 8, is_blocked: true, blocked_note: "Aguardando API de dados" },
+  { id: 4, ref: 104, subject: "Integração com gateway", assigned_to: 233, assigned_users: [233], status_extra_info: { name: "IMPEDIMENTO", color: "#d6465a" }, is_closed: false, total_points: 5 },
   { id: 3, ref: 103, subject: "Exportar CSV", assigned_to: null, assigned_users: [], status_extra_info: NEW, is_closed: false, total_points: 3 },
 ];
 const tasks = [

@@ -33,7 +33,7 @@ function Group({ title, items, kind, project, webLink }: { title: string; items:
             {g.items.map((i) => (
               <li key={i.id} className={i.closed ? "done" : ""}>
                 <span className="ref">#{i.ref}</span><span className="subj"><ItemButton kind={kind} id={i.id} project={project} href={webLink(kind, i.ref)}>{i.subject}</ItemButton></span>
-                {i.blocked && !i.closed && <span className="chip" style={{ ["--c" as string]: "#e5484d" }} title={i.blocked}><i />Bloqueada</span>}<span className="meta">{i.extra}</span>
+                {i.blocked && !i.closed && !i.blocked.startsWith("Status:") && <span className="chip" style={{ ["--c" as string]: "#e5484d" }} title={i.blocked}><i />Bloqueada</span>}<span className="meta">{i.extra}</span>
               </li>
             ))}
           </ul>

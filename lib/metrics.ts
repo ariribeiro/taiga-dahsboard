@@ -25,8 +25,14 @@ export type SprintOverview = {
   unassignedStories: number; unassignedTasks: number;
 };
 
-/** Motivo do impedimento (ou "Bloqueado" se o Taiga não trouxe motivo); null se não está bloqueado. */
-const blockedNote = (x: { is_blocked?: boolean; blocked_note?: string }) => (x.is_blocked ? x.blocked_note?.trim() || "Bloqueado" : null);
+// Impedimento = item bloqueado no Taiga (flag "Bloquear") OU com status de impedimento.
+// Muitos times modelam o impedimento como um status (ex.: "IMPEDIMENTO"); o padrão abaixo cobre
+// impedimento/impedido/bloqueado/blocked e pode ser trocado em BLOCKED_STATUS_REGEX (.env.local).
+const BLOCK_RE = (() => { try { return new RegExp(process.env.BLOCKED_STATUS_REGEX || "imped|bloquead|blocked", "i"); } catch { return /imped|bloquead|blocked/i; } })();
+
+/** Motivo do impedimento (ou o nome do status); null se o item não está impedido. */
+const blockedNote = (x: { is_blocked?: boolean; blocked_note?: string; status_extra_info: { name: string } }) =>
+  x.is_blocked ? x.blocked_note?.trim() || "Bloqueado" : BLOCK_RE.test(x.status_extra_info.name) ? `Status: ${x.status_extra_info.name}` : null;
 
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 
