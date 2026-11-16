@@ -9,7 +9,7 @@ import { Avatar, Bar, Chip, Kpi, Ring, SprintPicker, fmtDate } from "../../../..
 
 export const dynamic = "force-dynamic";
 
-type Item = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; extra: string };
+type Item = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; extra: string; blocked: string | null };
 
 function groupByStatus(items: Item[]) {
   const m = new Map<string, { name: string; color: string; closed: boolean; items: Item[] }>();
@@ -32,7 +32,8 @@ function Group({ title, items, kind, project, webLink }: { title: string; items:
           <ul className="items">
             {g.items.map((i) => (
               <li key={i.id} className={i.closed ? "done" : ""}>
-                <span className="ref">#{i.ref}</span><span className="subj"><ItemButton kind={kind} id={i.id} project={project} href={webLink(kind, i.ref)}>{i.subject}</ItemButton></span><span className="meta">{i.extra}</span>
+                <span className="ref">#{i.ref}</span><span className="subj"><ItemButton kind={kind} id={i.id} project={project} href={webLink(kind, i.ref)}>{i.subject}</ItemButton></span>
+                {i.blocked && !i.closed && <span className="chip" style={{ ["--c" as string]: "#e5484d" }} title={i.blocked}><i />Bloqueada</span>}<span className="meta">{i.extra}</span>
               </li>
             ))}
           </ul>
@@ -60,7 +61,7 @@ export default async function DevPage({ params, searchParams }: { params: { id: 
 
     const storiesOwned = dev.stories.filter((s) => s.role === "responsável");
     const storiesVia = dev.stories.filter((s) => s.role === "via task");
-    const toItem = (x: { id: number; ref: number; subject: string; status: string; color: string; closed: boolean }, extra: string): Item => ({ ...x, extra });
+    const toItem = (x: { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; blocked: string | null }, extra: string): Item => ({ id: x.id, ref: x.ref, subject: x.subject, status: x.status, color: x.color, closed: x.closed, blocked: x.blocked, extra });
     // Link opcional para abrir no Taiga (precisa de TAIGA_WEB_URL = endereço do frontend do Taiga)
     const web = (process.env.TAIGA_WEB_URL ?? "").replace(/\/+$/, "");
     const webLink = (kind: "us" | "task", ref: number) => (web ? `${web}/project/${project.slug}/${kind === "us" ? "us" : "task"}/${ref}` : null);

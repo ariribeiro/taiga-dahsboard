@@ -1,7 +1,7 @@
 import type { TMember, TMilestone, TStory, TTask } from "./taiga";
 
-export type DevStory = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; points: number; role: "responsável" | "via task" };
-export type DevTask = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; storyRef: number | null };
+export type DevStory = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; points: number; role: "responsável" | "via task"; blocked: string | null };
+export type DevTask = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; storyRef: number | null; blocked: string | null };
 export type DevView = {
   userId: number | null; name: string; photo: string | null; role: string;
   stories: DevStory[]; tasks: DevTask[];
@@ -9,6 +9,7 @@ export type DevView = {
   tasksDone: number; progress: number; // 0-100
   basis: "pontos" | "tasks"; // em que o % se baseia
   open: number; // tasks + stories ainda abertas
+  blocked: { ref: number; subject: string; note: string }[]; // stories abertas com impedimento em que o dev atua
 };
 
 export type UnassignedItem = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; points?: number; storyRef?: number | null };
@@ -23,6 +24,9 @@ export type SprintOverview = {
   byStatus: { name: string; color: string; count: number }[];
   unassignedStories: number; unassignedTasks: number;
 };
+
+/** Motivo do impedimento (ou "Bloqueado" se o Taiga não trouxe motivo); null se não está bloqueado. */
+const blockedNote = (x: { is_blocked?: boolean; blocked_note?: string }) => (x.is_blocked ? x.blocked_note?.trim() || "Bloqueado" : null);
 
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 
@@ -44,7 +48,7 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
     if (!d) {
       const m = members.find((x) => x.user === id);
       d = { userId: id, name: m?.full_name ?? known.get(id)?.name ?? name ?? `Usuário ${id}`, photo: m?.photo ?? known.get(id)?.photo ?? null, role: m ? m.role_name : "Fora do projeto",
-        stories: [], tasks: [], points: 0, closedPoints: 0, tasksDone: 0, progress: 0, basis: "tasks", open: 0 };
+        stories: [], tasks: [], points: 0, closedPoints: 0, tasksDone: 0, progress: 0, basis: "tasks", open: 0, blocked: [] };
       devs.set(id, d);
     }
     return d;
@@ -64,7 +68,7 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
     const share = (s.total_points ?? 0) / Math.max(owners.length, 1);
     for (const o of owners) {
       const d = ensure(o);
-      d.stories.push({ id: s.id, ref: s.ref, subject: s.subject, status: s.status_extra_info.name, color: s.status_extra_info.color, closed: s.is_closed, points: share, role: "responsável" });
+      d.stories.push({ id: s.id, ref: s.ref, subject: s.subject, status: s.status_extra_info.name, color: s.status_extra_info.color, closed: s.is_closed, points: share, role: "responsável", blocked: blockedNote(s) });
       d.points += share;
       if (s.is_closed) d.closedPoints += share;
     }
@@ -78,17 +82,18 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
     }
     const d = ensure(t.assigned_to);
     const parent = t.user_story ? storyByd.get(t.user_story) : undefined;
-    d.tasks.push({ id: t.id, ref: t.ref, subject: t.subject, status: t.status_extra_info.name, color: t.status_extra_info.color, closed: t.is_closed, storyRef: parent?.ref ?? null });
+    d.tasks.push({ id: t.id, ref: t.ref, subject: t.subject, status: t.status_extra_info.name, color: t.status_extra_info.color, closed: t.is_closed, storyRef: parent?.ref ?? null, blocked: blockedNote(t) });
     if (t.is_closed) d.tasksDone++;
     // dev envolvido na story via task, mesmo sem ser responsável
     if (parent && !d.stories.some((x) => x.id === parent.id)) {
-      d.stories.push({ id: parent.id, ref: parent.ref, subject: parent.subject, status: parent.status_extra_info.name, color: parent.status_extra_info.color, closed: parent.is_closed, points: 0, role: "via task" });
+      d.stories.push({ id: parent.id, ref: parent.ref, subject: parent.subject, status: parent.status_extra_info.name, color: parent.status_extra_info.color, closed: parent.is_closed, points: 0, role: "via task", blocked: blockedNote(parent) });
     }
   }
 
   const list = [...devs.values()];
   for (const d of list) {
     // progresso: tasks quando existem; senão pontos das stories
+    d.blocked = d.stories.filter((x) => x.blocked && !x.closed).map((x) => ({ ref: x.ref, subject: x.subject, note: x.blocked as string }));
     d.open = d.tasks.filter((t) => !t.closed).length + d.stories.filter((x) => !x.closed && x.role === "responsável").length;
     // Pontos das stories são o critério principal (mesmo do resumo da sprint);
     // sem pontos, usa as tasks.

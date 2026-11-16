@@ -83,12 +83,17 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
             {devs.map((d) => {
               const idle = !d.stories.length && !d.tasks.length;
               return (
-                <Link key={d.userId} href={`/projects/${pid}/devs/${d.userId}?sprint=${sprint.id}`} className={`card devcard${idle ? " idle" : ""}`}>
+                <Link key={d.userId} href={`/projects/${pid}/devs/${d.userId}?sprint=${sprint.id}`} className={`card devcard${idle ? " idle" : ""}${d.blocked.length ? " blocked" : ""}`}>
                   <div className="dc-top">
                     <Avatar name={d.name} src={d.photo} size={46} />
                     <span className="who"><strong>{d.name}</strong><span className="muted">{d.role || "Time"}</span></span>
                     <Ring value={d.progress} size={54} stroke={6} title={`Progresso baseado em ${d.basis}`} />
                   </div>
+                  {d.blocked.length > 0 && (
+                    <div className="dc-block" title={d.blocked.map((b) => `#${b.ref} ${b.subject} — ${b.note}`).join("\n")}>
+                      <span aria-hidden="true">🚧</span> {d.blocked.length} {d.blocked.length === 1 ? "história com impedimento" : "histórias com impedimento"}
+                    </div>
+                  )}
                   {idle ? <p className="muted dc-idle">Sem atividade nesta sprint</p> : (
                     <div className="dc-stats">
                       <div><b>{d.tasksDone}/{d.tasks.length}</b><span>tasks</span></div>

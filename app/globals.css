@@ -234,3 +234,8 @@ button.ghost:hover{background:var(--soft);transform:none}
 .lb-th img{width:100%;height:100%;object-fit:cover;display:block}.lb-th.on{border-color:#fff;opacity:1}.lb-th:hover{transform:none;filter:none;opacity:1;background:rgba(255,255,255,.08)}
 @media(max-width:700px){.lb-stage{padding:0 8px}.lb-nav{width:38px;height:38px;font-size:24px}.lb-prev{left:4px}.lb-next{right:4px}.lb-name{font-size:13px}}
 .lb-bad{display:grid;place-items:center;width:100%;height:100%;font-size:18px;opacity:.7}
+
+/* devs com impedimento */
+.devcard.blocked{border-color:color-mix(in srgb,var(--bad) 55%,var(--line));box-shadow:var(--shadow),inset 4px 0 0 var(--bad)}
+.devcard.blocked:hover{border-color:var(--bad)}
+.dc-block{margin-top:14px;padding:7px 10px;border-radius:10px;font-size:12.5px;font-weight:600;color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent);border:1px solid color-mix(in srgb,var(--bad) 28%,transparent)}

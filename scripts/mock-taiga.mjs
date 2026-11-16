@@ -15,7 +15,7 @@ const milestones = [
 ];
 const stories = [
   { id: 1, ref: 101, subject: "Login SSO", assigned_to: 1, assigned_users: [1], status_extra_info: DONE, is_closed: true, total_points: 5 },
-  { id: 2, ref: 102, subject: "Tela de relatórios", assigned_to: 2, assigned_users: [2, 3], status_extra_info: DOING, is_closed: false, total_points: 8 },
+  { id: 2, ref: 102, subject: "Tela de relatórios", assigned_to: 2, assigned_users: [2, 3], status_extra_info: DOING, is_closed: false, total_points: 8, is_blocked: true, blocked_note: "Aguardando API de dados" },
   { id: 3, ref: 103, subject: "Exportar CSV", assigned_to: null, assigned_users: [], status_extra_info: NEW, is_closed: false, total_points: 3 },
 ];
 const tasks = [
@@ -29,6 +29,7 @@ const tasks = [
   { id: 22, ref: 302, subject: "403-T1 — Endpoint interno consulta diretor por CPF", user_story: 2, assigned_to: 3, assigned_to_extra_info: { id: 3, full_name_display: "CARLA DIAS DA SILVA" }, status_extra_info: DOING, is_closed: false },
   { id: 23, ref: 303, subject: "403-T2 — Persistência / sincronização (confirmar)", user_story: 2, assigned_to: 3, assigned_to_extra_info: { id: 3, full_name_display: "CARLA DIAS DA SILVA" }, status_extra_info: DONE, is_closed: true },
   { id: 30, ref: 330, subject: "Definir esquema de cache", user_story: 3, assigned_to: null, status_extra_info: NEW, is_closed: false },
+  { id: 31, ref: 331, subject: "Revisar contrato da API", user_story: 2, assigned_to: 1, status_extra_info: NEW, is_closed: false },
   { id: 4, ref: 204, subject: "Teste de carga", user_story: 3, assigned_to: 1, status_extra_info: NEW, is_closed: false },
 ];
 const send = (res, code, body) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(body)); };

@@ -83,11 +83,13 @@ export type TStory = {
   assigned_to: number | null; assigned_users: number[];
   assigned_to_extra_info?: TUserInfo | null;
   status_extra_info: TStatusInfo; is_closed: boolean; total_points: number | null;
+  is_blocked?: boolean; blocked_note?: string;
 };
 export type TTask = {
   id: number; ref: number; subject: string; user_story: number | null;
   assigned_to: number | null; assigned_to_extra_info?: TUserInfo | null;
   status_extra_info: TStatusInfo; is_closed: boolean;
+  is_blocked?: boolean; blocked_note?: string;
 };
 
 export const getProjects = (userId: number) =>
