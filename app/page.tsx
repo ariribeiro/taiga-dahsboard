@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
+import { Logo } from "./ui";
 
 const MSG: Record<string, string> = {
   "1": "Informe usuário e senha.",
@@ -12,11 +13,21 @@ const MSG: Record<string, string> = {
 export default function Home({ searchParams }: { searchParams: { erro?: string } }) {
   if (getSession()) redirect("/projects");
   return (
-    <main className="center">
+    <main className="login-page">
+      <section className="hero">
+        <Logo />
+        <h1>Enxergue o seu time,<br />sprint a sprint.</h1>
+        <p>Progresso por desenvolvedor, visão geral da sprint e o que cada pessoa está fazendo — direto do seu Taiga.</p>
+        <ul>
+          <li>✓ Usa as suas permissões do Taiga</li>
+          <li>✓ Sua senha não é armazenada</li>
+          <li>✓ Dados sempre atualizados</li>
+        </ul>
+      </section>
       <form className="card login" method="post" action="/api/login">
-        <h1>Taiga · Visão por Dev</h1>
-        <p className="muted">Entre com seu usuário do Taiga.</p>
-        {searchParams.erro && <p className="err">{MSG[searchParams.erro] ?? MSG.REDE}</p>}
+        <h2>Entrar</h2>
+        <p className="muted">Use seu usuário e senha do Taiga.</p>
+        {searchParams.erro && <p className="alert">{MSG[searchParams.erro] ?? MSG.REDE}</p>}
         <label>Usuário ou e-mail<input name="username" autoComplete="username" required autoFocus /></label>
         <label>Senha<input name="password" type="password" autoComplete="current-password" required /></label>
         <button type="submit">Entrar</button>

@@ -4,18 +4,9 @@ import { getSession } from "@/lib/session";
 import { getMembers, getMilestones, getProject, getStories, getTasks, TaigaError } from "@/lib/taiga";
 import { buildViews, pickCurrentSprint } from "@/lib/metrics";
 import { Header } from "../../header";
+import { Avatar, Bar, Chip, Kpi, Ring } from "../../ui";
 
 export const dynamic = "force-dynamic";
-
-const Bar = ({ value, marker }: { value: number; marker?: number | null }) => (
-  <div className="bar">
-    <div className="fill" style={{ width: `${value}%` }} />
-    {marker != null && <div className="mark" style={{ left: `${marker}%` }} title={`Esperado pelo calendário: ${marker}%`} />}
-  </div>
-);
-const Chip = ({ name, color }: { name: string; color: string }) => (
-  <span className="chip" style={{ borderColor: color, color }}>{name}</span>
-);
 
 export default async function ProjectPage({ params, searchParams }: { params: { id: string }; searchParams: { sprint?: string } }) {
   const cur = getSession();
@@ -35,65 +26,87 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
     const { devs, overview: o } = buildViews(members, stories, tasks, sprint);
     const late = o.expectedProgress != null && o.progress + 10 < o.expectedProgress;
 
+    const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+    const totalStatus = o.byStatus.reduce((n, x) => n + x.count, 0) || 1;
+    const unassigned = o.unassignedStories + o.unassignedTasks;
+
     return (
       <>
         <Header name={cur.session.fullName} />
         <main className="wrap">
-          <p><Link href="/projects" className="muted">← Projetos</Link></p>
-          <div className="row">
+          <Link href="/projects" className="back">← Projetos</Link>
+          <div className="page-title">
             <h2>{project.name}</h2>
-            <form method="get" className="row">
+            <form method="get" className="picker">
               <select name="sprint" defaultValue={sprint.id}>
                 {sorted.map((m) => <option key={m.id} value={m.id}>{m.name}{m.closed ? " (fechada)" : ""}</option>)}
               </select>
-              <button className="ghost" type="submit">Ver</button>
+              <button type="submit">Ver</button>
             </form>
           </div>
 
-          <section className="card">
-            <div className="row">
-              <h3>{sprint.name}</h3>
-              <span className="muted">{sprint.estimated_start} → {sprint.estimated_finish}{!sprint.closed && o.daysLeft != null ? ` · ${o.daysLeft} dia(s) restantes de ${o.totalDays}` : ""}</span>
+          <section className="card overview">
+            <Ring value={o.progress} size={132} stroke={12} label="concluído" />
+            <div className="ov-main">
+              <div className="row">
+                <h3>{sprint.name}</h3>
+                <span className={`badge ${sprint.closed ? "b-closed" : late ? "b-late" : "b-ok"}`}>
+                  {sprint.closed ? "Fechada" : late ? "Atrasada" : "No ritmo"}
+                </span>
+              </div>
+              <p className="muted">
+                {fmt(sprint.estimated_start)} → {fmt(sprint.estimated_finish)}
+                {!sprint.closed && o.daysLeft != null && ` · ${o.daysLeft} de ${o.totalDays} dias restantes`}
+              </p>
+              <Bar value={o.progress} marker={sprint.closed ? null : o.expectedProgress} />
+              {!sprint.closed && o.expectedProgress != null && (
+                <p className="muted small">A marca na barra indica o esperado pelo calendário ({o.expectedProgress}%).</p>
+              )}
             </div>
-            <Bar value={o.progress} marker={sprint.closed ? null : o.expectedProgress} />
-            <p className={late ? "err" : "muted"}>
-              {o.progress}% concluído{!sprint.closed && o.expectedProgress != null && ` · calendário indica ${o.expectedProgress}%`}{late && " — atrás do esperado"}
-            </p>
-            <div className="kpis">
-              <div><b>{o.closedPoints}/{o.totalPoints}</b><span>pontos</span></div>
-              <div><b>{o.storiesDone}/{o.stories}</b><span>user stories</span></div>
-              <div><b>{o.tasksDone}/{o.tasks}</b><span>tasks</span></div>
-              <div><b>{o.unassignedStories + o.unassignedTasks}</b><span>sem responsável</span></div>
-            </div>
-            <div className="chips">{o.byStatus.map((s) => <span key={s.name}><Chip name={s.name} color={s.color} /> {s.count}</span>)}</div>
           </section>
 
-          <h3>Por desenvolvedor</h3>
+          <div className="kpis">
+            <Kpi icon="◎" value={<>{o.closedPoints}<small>/{o.totalPoints}</small></>} label="pontos" />
+            <Kpi icon="▤" value={<>{o.storiesDone}<small>/{o.stories}</small></>} label="user stories" />
+            <Kpi icon="✓" value={<>{o.tasksDone}<small>/{o.tasks}</small></>} label="tasks" />
+            <Kpi icon="!" value={unassigned} label="sem responsável" />
+          </div>
+
+          <section className="card">
+            <h4 className="sec">Stories por status</h4>
+            <div className="stack">
+              {o.byStatus.map((s) => <span key={s.name} style={{ width: `${(s.count / totalStatus) * 100}%`, background: s.color }} title={`${s.name}: ${s.count}`} />)}
+            </div>
+            <div className="legend">{o.byStatus.map((s) => <span key={s.name}><i style={{ background: s.color }} />{s.name} <b>{s.count}</b></span>)}</div>
+          </section>
+
+          <div className="page-title"><h3>Por desenvolvedor</h3><span className="muted">{devs.length} pessoa(s) com atividade</span></div>
           {!devs.length && <p className="muted">Nenhuma atividade atribuída nesta sprint.</p>}
           <div className="devs">
             {devs.map((d) => (
               <details key={d.userId} className="card dev" open>
                 <summary>
-                  <span className="avatar">{d.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}</span>
-                  <span className="grow"><strong>{d.name}</strong> <span className="muted">{d.role}</span></span>
-                  <span className="muted">{d.tasksDone}/{d.tasks.length} tasks · {d.closedPoints}/{d.points} pts</span>
-                  <span className="pctn">{d.progress}%</span>
+                  <Avatar name={d.name} size={44} />
+                  <span className="who"><strong>{d.name}</strong><span className="muted">{d.role || "Time"}</span></span>
+                  <span className="dev-stats"><b>{d.tasksDone}/{d.tasks.length}</b> tasks<br /><b>{d.closedPoints}/{d.points}</b> pts</span>
+                  <Ring value={d.progress} size={54} stroke={6} />
                 </summary>
-                <Bar value={d.progress} />
                 {d.stories.length > 0 && (<>
-                  <h4>User stories</h4>
+                  <h4 className="sec">User stories</h4>
                   <ul>{d.stories.map((s) => (
                     <li key={s.id} className={s.closed ? "done" : ""}>
-                      <span className="muted">#{s.ref}</span> {s.subject} <Chip name={s.status} color={s.color} />
-                      {s.role === "via task" ? <span className="muted"> · via task</span> : <span className="muted"> · {s.points} pts</span>}
+                      <span className="ref">#{s.ref}</span><span className="subj">{s.subject}</span>
+                      <Chip name={s.status} color={s.color} />
+                      <span className="meta">{s.role === "via task" ? "via task" : `${s.points} pts`}</span>
                     </li>))}</ul>
                 </>)}
                 {d.tasks.length > 0 && (<>
-                  <h4>Tasks</h4>
+                  <h4 className="sec">Tasks</h4>
                   <ul>{d.tasks.map((t) => (
                     <li key={t.id} className={t.closed ? "done" : ""}>
-                      <span className="muted">#{t.ref}</span> {t.subject} <Chip name={t.status} color={t.color} />
-                      {t.storyRef && <span className="muted"> · story #{t.storyRef}</span>}
+                      <span className="ref">#{t.ref}</span><span className="subj">{t.subject}</span>
+                      <Chip name={t.status} color={t.color} />
+                      <span className="meta">{t.storyRef ? `story #${t.storyRef}` : ""}</span>
                     </li>))}</ul>
                 </>)}
               </details>
