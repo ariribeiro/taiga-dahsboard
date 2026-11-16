@@ -52,7 +52,20 @@ http.createServer((req, res) => {
   }
   if (p === "/memberships") return send(res, 200, members);
   if (p === "/milestones") return send(res, 200, milestones);
+  let m;
+  if ((m = p.match(/^\/userstories\/(\d+)$/))) {
+    const st = stories.find((x) => x.id === +m[1]); if (!st) return send(res, 404, {});
+    return send(res, 200, { ...st, project: 1, description: "Como gestor, quero ver o progresso por dev.\n\nCritérios:\n- filtro por sprint\n- exportar PDF", tags: [["frontend", "#5b5bf0"], ["relatorios", null]],
+      due_date: iso(5), created_date: iso(-20) + "T10:00:00Z", modified_date: iso(-1) + "T15:30:00Z", is_blocked: st.id === 2, blocked_note: "Aguardando API de dados",
+      owner_extra_info: { full_name_display: "Ana Souza", photo: null }, assigned_to_extra_info: st.assigned_to ? { id: st.assigned_to, full_name_display: "Ana Souza" } : null });
+  }
+  if ((m = p.match(/^\/tasks\/(\d+)$/))) {
+    const t = tasks.find((x) => x.id === +m[1]); if (!t) return send(res, 404, {});
+    return send(res, 200, { ...t, project: 1, description: "", tags: [], created_date: iso(-6) + "T09:00:00Z", modified_date: iso(-2) + "T11:00:00Z",
+      user_story_extra_info: { ref: stories.find((x) => x.id === t.user_story)?.ref, subject: stories.find((x) => x.id === t.user_story)?.subject } });
+  }
+  if (p.startsWith("/history/")) return send(res, 200, [{ id: "a", user: { name: "Bruno Lima", photo: null }, created_at: iso(-3) + "T14:00:00Z", comment: "Subi o protótipo no Figma.\nPreciso de revisão." }, { id: "b", user: { name: "Carla Dias" }, created_at: iso(-2) + "T09:10:00Z", comment: "" }]);
   if (p === "/userstories") return send(res, 200, stories);
-  if (p === "/tasks") return send(res, 200, tasks);
+  if (p === "/tasks") { const us = u.searchParams.get("user_story"); return send(res, 200, us ? tasks.filter((t) => t.user_story === +us) : tasks); }
   send(res, 404, {});
 }).listen(9000, () => console.log("Mock Taiga em http://localhost:9000"));

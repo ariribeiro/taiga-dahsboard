@@ -131,3 +131,21 @@ button.ghost:hover{background:var(--soft);transform:none}
 .fold>summary{cursor:pointer;list-style:none;user-select:none}.fold>summary::-webkit-details-marker{display:none}
 .chev{display:inline-block;transition:transform .2s;margin-right:4px;font-size:13px}.fold[open] .chev{transform:rotate(90deg)}
 .fold>summary:hover h4{color:var(--fg)}
+
+/* modal de detalhes */
+.linkbtn{background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer;border-radius:0}
+.linkbtn:hover{background:none;transform:none;filter:none;color:var(--accent);text-decoration:underline}
+.modal{border:0;padding:0;border-radius:16px;background:var(--card);color:var(--fg);width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 40px);box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
+.modal::backdrop{background:rgba(10,12,25,.55);backdrop-filter:blur(3px)}
+.modal-in{position:relative;padding:24px 26px 22px}.modal-x{position:absolute;top:14px;right:14px;padding:4px 10px}
+.modal-t{font-size:21px;letter-spacing:-.01em;margin:4px 40px 12px 0}.modal-badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.tag{padding:2px 10px;border-radius:6px;font-size:12px;background:color-mix(in srgb,var(--c,var(--muted)) 16%,transparent);color:var(--fg);border:1px solid color-mix(in srgb,var(--c,var(--muted)) 40%,transparent)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px 20px;margin:16px 0 4px;padding:14px 0;border-block:1px solid var(--line)}
+.facts dt{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}.facts dd{margin:0;font-size:14px;display:flex;flex-wrap:wrap;gap:6px 12px}
+.who-i{display:inline-flex;align-items:center;gap:6px}
+.desc{white-space:pre-wrap;word-break:break-word;margin:0;font-size:14px}
+.cmts{list-style:none;margin:0;padding:0;display:grid;gap:12px}.cmts li{display:flex;gap:10px}.cmts p{margin:2px 0 0;white-space:pre-wrap;font-size:14px}
+.modal-foot{margin:18px 0 0;text-align:right}.modal-foot a{color:var(--accent);font-weight:600}
+.modal .items{max-height:none}.modal .alert{margin:10px 0 0}
+.skel{display:grid;gap:12px;padding:8px 0}.skel i{display:block;height:18px;border-radius:8px;background:linear-gradient(90deg,var(--soft),var(--line),var(--soft));background-size:200% 100%;animation:sh 1.2s infinite}.skel i:first-child{width:40%}.skel i:nth-child(2){height:26px}
+@keyframes sh{to{background-position:-200% 0}}

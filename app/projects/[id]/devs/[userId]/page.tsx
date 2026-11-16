@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { TaigaError } from "@/lib/taiga";
 import { loadSprint } from "@/lib/sprint";
+import { ItemButton } from "../../../../item-modal";
 import { Header } from "../../../../header";
 import { Avatar, Bar, Chip, Kpi, Ring, SprintPicker, fmtDate } from "../../../../ui";
 
@@ -20,7 +21,7 @@ function groupByStatus(items: Item[]) {
   return [...m.values()].sort((a, b) => Number(a.closed) - Number(b.closed));
 }
 
-function Group({ title, items }: { title: string; items: Item[] }) {
+function Group({ title, items, kind, project, webLink }: { title: string; items: Item[]; kind: "us" | "task"; project: number; webLink: (kind: "us" | "task", ref: number) => string | null }) {
   if (!items.length) return null;
   return (
     <section className="card">
@@ -31,7 +32,7 @@ function Group({ title, items }: { title: string; items: Item[] }) {
           <ul className="items">
             {g.items.map((i) => (
               <li key={i.id} className={i.closed ? "done" : ""}>
-                <span className="ref">#{i.ref}</span><span className="subj">{i.subject}</span><span className="meta">{i.extra}</span>
+                <span className="ref">#{i.ref}</span><span className="subj"><ItemButton kind={kind} id={i.id} project={project} href={webLink(kind, i.ref)}>{i.subject}</ItemButton></span><span className="meta">{i.extra}</span>
               </li>
             ))}
           </ul>
@@ -60,6 +61,9 @@ export default async function DevPage({ params, searchParams }: { params: { id: 
     const storiesOwned = dev.stories.filter((s) => s.role === "responsável");
     const storiesVia = dev.stories.filter((s) => s.role === "via task");
     const toItem = (x: { id: number; ref: number; subject: string; status: string; color: string; closed: boolean }, extra: string): Item => ({ ...x, extra });
+    // Link opcional para abrir no Taiga (precisa de TAIGA_WEB_URL = endereço do frontend do Taiga)
+    const web = (process.env.TAIGA_WEB_URL ?? "").replace(/\/+$/, "");
+    const webLink = (kind: "us" | "task", ref: number) => (web ? `${web}/project/${project.slug}/${kind === "us" ? "us" : "task"}/${ref}` : null);
     const idle = !dev.stories.length && !dev.tasks.length;
 
     return shell(<>
@@ -93,9 +97,9 @@ export default async function DevPage({ params, searchParams }: { params: { id: 
           <Kpi icon="…" value={dev.open} label="em aberto" />
         </div>
 
-        <Group title="Tasks" items={dev.tasks.map((t) => toItem(t, t.storyRef ? `story #${t.storyRef}` : ""))} />
-        <Group title="User stories (responsável)" items={storiesOwned.map((s) => toItem(s, `${s.points} pts`))} />
-        <Group title="Stories em que atua via task" items={storiesVia.map((s) => toItem(s, ""))} />
+        <Group title="Tasks" items={dev.tasks.map((t) => toItem(t, t.storyRef ? `story #${t.storyRef}` : ""))} kind="task" project={pid} webLink={webLink} />
+        <Group title="User stories (responsável)" items={storiesOwned.map((s) => toItem(s, `${s.points} pts`))} kind="us" project={pid} webLink={webLink} />
+        <Group title="Stories em que atua via task" items={storiesVia.map((s) => toItem(s, ""))} kind="us" project={pid} webLink={webLink} />
       </>)}
     </>);
   } catch (e) {
