@@ -62,7 +62,9 @@ export function buildViews(members: TMember[], stories: TStory[], tasks: TTask[]
     }
     return d;
   };
-  members.filter((m) => m.user && m.is_active).forEach((m) => ensure(m.user!));
+  // Membro ativo = tem usuário (não é convite pendente) e o Taiga não o marca como inativo.
+  // Só exclui quando o campo vem explicitamente false: se a versão do Taiga não enviar o campo, o membro conta.
+  members.filter((m) => m.user && m.is_active !== false && m.is_user_active !== false).forEach((m) => ensure(m.user!));
 
   const storyByd = new Map(stories.map((s) => [s.id, s]));
   let unassignedStories = 0, unassignedTasks = 0;

@@ -70,7 +70,7 @@ export async function taigaGet<T>(path: string): Promise<T> {
 
 // ---- Tipos (apenas os campos usados) ----
 export type TProject = { id: number; name: string; slug: string; description?: string; logo_small_url?: string | null; logo_big_url?: string | null };
-export type TMember = { user: number | null; full_name: string; photo: string | null; role_name: string; is_active: boolean };
+export type TMember = { user: number | null; full_name: string; photo: string | null; role_name: string; is_active?: boolean; is_user_active?: boolean };
 export type TMilestone = {
   id: number; name: string; slug: string;
   estimated_start: string; estimated_finish: string;
