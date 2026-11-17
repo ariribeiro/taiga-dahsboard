@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { taigaWebLink } from "@/lib/links";
-import { DEFAULT_PERIOD, PERIODS, parsePeriod } from "@/lib/periods";
-import { isExampleUrl } from "@/lib/placeholder";
+import { taigaWebLink } from "@/infra/links";
+import { DEFAULT_PERIOD, PERIODS, parsePeriod } from "@/domain/periods";
+import { isExampleUrl } from "@/infra/placeholder";
 
 afterEach(() => { vi.unstubAllEnvs(); });
 

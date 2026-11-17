@@ -1,6 +1,6 @@
-import { webBase } from "./links";
-import { allowedRoleNames } from "./roles";
-import { BLOCKED_STATUS_PATTERN, PACE_TOLERANCE } from "./metrics";
+import { webBase } from "../infra/links";
+import { allowedRoleNames } from "../domain/roles";
+import { BLOCKED_STATUS_PATTERN, PACE_TOLERANCE } from "../domain/metrics";
 
 /** Dias sem alteração para um item em andamento (Kanban) contar como "parado". */
 export const STALE_DAYS = Math.max(1, Number(process.env.KANBAN_STALE_DAYS) || 7);

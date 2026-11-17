@@ -1,4 +1,4 @@
-import type { TMember, TStory, TUsStatus } from "./taiga";
+import type { TMember, TStory, TUsStatus } from "../infra/taiga";
 import { blockedNote } from "./metrics";
 import { allowedRoleSet, normRole } from "./roles";
 

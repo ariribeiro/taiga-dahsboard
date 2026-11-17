@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Semaphore } from "@/lib/limit";
+import { Semaphore } from "@/infra/limit";
 
 const tick = (ms = 5) => new Promise<void>((r) => setTimeout(r, ms));
 

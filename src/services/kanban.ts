@@ -1,5 +1,5 @@
-import { getMembers, getUsStatuses, taigaGet, taigaGetPaged, TaigaError, type TStory } from "./taiga";
-import { classifyStatuses, type KStatus } from "./kanban-metrics";
+import { getMembers, getUsStatuses, taigaGet, taigaGetPaged, TaigaError, type TStory } from "../infra/taiga";
+import { classifyStatuses, type KStatus } from "../domain/kanban-metrics";
 
 const PAGE = 100;      // itens por página nos concluídos
 const MAX_PAGES = 5;   // teto de páginas por coluna concluída (até 500 itens mais recentes)

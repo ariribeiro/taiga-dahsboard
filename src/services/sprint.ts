@@ -1,5 +1,5 @@
-import { getMembers, getMilestones, getProject, getStories, getTasks, getUser, getMilestoneStats } from "./taiga";
-import { buildViews, pickCurrentSprint } from "./metrics";
+import { getMembers, getMilestones, getProject, getStories, getTasks, getUser, getMilestoneStats } from "../infra/taiga";
+import { buildViews, pickCurrentSprint } from "../domain/metrics";
 
 /** Carrega tudo o que as páginas de sprint/dev precisam. */
 export async function loadSprint(pid: number, sprintParam?: string, withStats = false) {

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BLOCKED_STATUS_PATTERN, PACE_TOLERANCE, blockedNote, buildViews, paceOf, pickCurrentSprint } from "@/lib/metrics";
+import { BLOCKED_STATUS_PATTERN, PACE_TOLERANCE, blockedNote, buildViews, paceOf, pickCurrentSprint } from "@/domain/metrics";
 import { member, sprint, st, story, task } from "./fixtures";
 
 beforeEach(() => { delete process.env.DEV_ROLES; });

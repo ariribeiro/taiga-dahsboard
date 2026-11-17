@@ -1,4 +1,4 @@
-import type { TMember, TMilestone, TStory, TTask } from "./taiga";
+import type { TMember, TMilestone, TStory, TTask } from "../infra/taiga";
 import { allowedRoleSet, normRole } from "./roles";
 
 export type DevStory = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; points: number; role: "responsável" | "via task"; blocked: string | null };

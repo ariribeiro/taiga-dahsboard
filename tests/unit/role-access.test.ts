@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAllowedRole } from "@/lib/taiga";
+import { isAllowedRole } from "@/infra/taiga";
 
 describe("isAllowedRole", () => {
   it("aceita as variações com servidor, fiscal ou fiscalização", () => {

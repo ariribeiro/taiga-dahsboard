@@ -1,6 +1,6 @@
-import { getMembers, getUser, taigaGet, TAIGA_URL } from "./taiga";
-import type { ItemDetail } from "./item";
-import { taigaWebLink } from "./links";
+import { getMembers, getUser, taigaGet, TAIGA_URL } from "../infra/taiga";
+import type { ItemDetail } from "../domain/item";
+import { taigaWebLink } from "../infra/links";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FailureLimiter } from "@/lib/ratelimit";
+import { FailureLimiter } from "@/infra/ratelimit";
 
 const MIN = 60_000;
 
@@ -40,12 +40,12 @@ describe("clientIp", () => {
 
   it("sem TRUST_PROXY ignora X-Forwarded-For (não dá para forjar o IP)", async () => {
     vi.resetModules();
-    const { clientIp } = await import("@/lib/ratelimit");
+    const { clientIp } = await import("@/infra/ratelimit");
     expect(clientIp(req({ "x-forwarded-for": "1.2.3.4" }))).toBe("direto");
   });
   it("com TRUST_PROXY=1 usa o primeiro IP do X-Forwarded-For", async () => {
     vi.stubEnv("TRUST_PROXY", "1"); vi.resetModules();
-    const { clientIp } = await import("@/lib/ratelimit");
+    const { clientIp } = await import("@/infra/ratelimit");
     expect(clientIp(req({ "x-forwarded-for": "1.2.3.4, 10.0.0.1" }))).toBe("1.2.3.4");
     expect(clientIp(req({ "x-real-ip": "5.6.7.8" }))).toBe("5.6.7.8");
     expect(clientIp(req({}))).toBe("desconhecido");

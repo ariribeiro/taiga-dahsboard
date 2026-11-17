@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { DEFAULT_ROLES, allowedRoleNames, allowedRoleSet, normRole } from "@/lib/roles";
+import { DEFAULT_ROLES, allowedRoleNames, allowedRoleSet, normRole } from "@/domain/roles";
 
 afterEach(() => { delete process.env.DEV_ROLES; });
 

@@ -21,7 +21,7 @@ async function load(handler: Handler, env: Record<string, string> = {}, tokenFor
     return handler(u, i);   // async: erro vira promessa rejeitada, como no fetch real
   });
   vi.stubGlobal("fetch", fetchMock);
-  const mod = await import("@/lib/taiga");
+  const mod = await import("@/infra/taiga");
   /** Chamadas ao Taiga, sem o login do usuário de serviço. */
   const calls = () => fetchMock.mock.calls.map((c) => String(c[0]).split("/api/v1")[1]);
   return { ...mod, fetchMock, calls };
@@ -134,14 +134,14 @@ describe("taigaGet (usuário de serviço)", () => {
     vi.resetModules();
     vi.stubEnv("TAIGA_URL", "http://taiga.test"); vi.stubEnv("TAIGA_SERVICE_USER", "svc"); vi.stubEnv("TAIGA_SERVICE_PASSWORD", "errada");
     vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 401 })));
-    const { taigaGet } = await import("@/lib/taiga");
+    const { taigaGet } = await import("@/infra/taiga");
     await expect(taigaGet("/x")).rejects.toMatchObject({ status: 503, message: "SERVICE_AUTH" });
   });
 
   it("sem credenciais do usuário de serviço configuradas, avisa 'CONFIG' e lista o que falta", async () => {
     vi.resetModules();
     vi.stubEnv("TAIGA_URL", "http://taiga.test"); vi.stubEnv("TAIGA_SERVICE_USER", ""); vi.stubEnv("TAIGA_SERVICE_PASSWORD", "");
-    const { taigaGet, missingConfig } = await import("@/lib/taiga");
+    const { taigaGet, missingConfig } = await import("@/infra/taiga");
     expect(missingConfig()).toEqual(["TAIGA_SERVICE_USER", "TAIGA_SERVICE_PASSWORD"]);
     await expect(taigaGet("/x")).rejects.toMatchObject({ message: "CONFIG" });
   });
@@ -185,12 +185,12 @@ describe("taigaLogin (pessoa)", () => {
   });
   it("TAIGA_URL com o valor de exemplo do .env.example também avisa 'CONFIG'", async () => {
     vi.resetModules(); vi.stubEnv("TAIGA_URL", "https://taiga-api.suaempresa.com");
-    const { taigaLogin } = await import("@/lib/taiga");
+    const { taigaLogin } = await import("@/infra/taiga");
     await expect(taigaLogin("u", "p")).rejects.toMatchObject({ message: "CONFIG" });
   });
   it("sem TAIGA_URL configurada, avisa 'CONFIG'", async () => {
     vi.resetModules(); vi.stubEnv("TAIGA_URL", "");
-    const { taigaLogin } = await import("@/lib/taiga");
+    const { taigaLogin } = await import("@/infra/taiga");
     await expect(taigaLogin("u", "p")).rejects.toMatchObject({ message: "CONFIG" });
   });
 });

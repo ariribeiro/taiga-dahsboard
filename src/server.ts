@@ -1,5 +1,5 @@
 import { buildApp } from "./app";
-import { missingConfig } from "./lib/taiga";
+import { missingConfig } from "./infra/taiga";
 
 const app = buildApp();
 const port = Number(process.env.PORT) || 8080;

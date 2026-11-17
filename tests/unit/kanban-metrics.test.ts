@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { classifyStatuses, kanbanMetrics, type KanbanInput, type KStatus } from "@/lib/kanban-metrics";
-import type { TStory, TUsStatus } from "@/lib/taiga";
+import { classifyStatuses, kanbanMetrics, type KanbanInput, type KStatus } from "@/domain/kanban-metrics";
+import type { TStory, TUsStatus } from "@/infra/taiga";
 import { member, st, story } from "./fixtures";
 
 const DAY = 86_400_000;

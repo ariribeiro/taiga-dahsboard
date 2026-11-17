@@ -11,7 +11,7 @@ flowchart LR
 
 - A API **não é exposta** fora do cluster (sem `Route`): só o front a alcança.
 - **Pessoas** continuam entrando com usuário e senha do Taiga, mas isso serve **apenas para provar quem são**: o token delas é descartado na hora. Todas as consultas usam o token do usuário de serviço.
-- O que cada pessoa pode ver é decidido **aqui**: só projetos em que ela tem o papel “Servidor Dirti/Fiscal” (veja `isAllowedRole` em `src/lib/taiga.ts`).
+- O que cada pessoa pode ver é decidido **aqui**: só projetos em que ela tem o papel “Servidor Dirti/Fiscal” (veja `isAllowedRole` em `src/infra/taiga.ts`).
 
 ## Usuário de serviço
 
@@ -21,7 +21,7 @@ flowchart LR
 
 A API entra com esse usuário sob demanda e **renova o token sozinha** (refresh e, se falhar, novo login). Se a senha for recusada, os dados respondem `503 SERVICE_AUTH` e o erro aparece no log; as pessoas continuam conseguindo entrar.
 
-> ⚠️ Como o usuário de serviço enxerga mais do que cada pessoa, **toda rota confere o papel da pessoa no projeto** e o detalhe de item confere que ele pertence ao projeto informado. Qualquer rota nova que receba um id de projeto deve passar por `guard()` em `src/app.ts`.
+> ⚠️ Como o usuário de serviço enxerga mais do que cada pessoa, **toda rota confere o papel da pessoa no projeto** e o detalhe de item confere que ele pertence ao projeto informado. Qualquer rota nova que receba um id de projeto deve passar por `guardProject()` em `src/routes/guards.ts`.
 
 ## Rodando localmente
 
@@ -103,15 +103,21 @@ oc apply -f deploy/openshift/deployment.yaml -f deploy/openshift/service.yaml -f
 
 ```
 src/
-  server.ts            entrada (porta, encerramento gracioso)
-  app.ts               rotas, autenticação, tratamento de erros
-  lib/
-    taiga.ts           cliente do Taiga + token do usuário de serviço
-    session.ts         sessões em memória (só identidade, sem token)
-    ratelimit.ts       freio de força bruta
-    metrics.ts, kanban*.ts, sprint.ts   regras e métricas
-    item-detail.ts     detalhe de story/task
-scripts/mock-taiga.mjs Taiga simulado (desenvolvimento e testes; fora da imagem)
-tests/                 unitários e de API
-deploy/openshift/      manifests
+  server.ts              entrada (porta, encerramento gracioso)
+  app.ts                 monta o Fastify: chave interna, tratamento de erros, registro das rotas
+  routes/                camada HTTP: valida a entrada, confere sessão/acesso e chama os serviços
+    guards.ts            sessão (requireSession) e papel no projeto (guardProject): usados em toda rota
+    health · auth · projects · sprint · kanban · items
+  services/              casos de uso: juntam várias consultas ao Taiga e as regras do domínio
+    sprint · kanban · item-detail · meta
+  domain/                regras puras, sem rede nem estado (fáceis de testar)
+    metrics · kanban-metrics · roles · periods · item (tipos)
+  infra/                 acesso ao mundo externo e estado em memória
+    taiga.ts             cliente do Taiga + token do usuário de serviço
+    session · ratelimit · limit · links · placeholder
+scripts/mock-taiga.mjs   Taiga simulado (desenvolvimento e testes; fora da imagem)
+tests/                   unitários e de API
+deploy/openshift/        manifests
 ```
+
+Dependências: `routes → services → domain` e `infra`; `domain` não importa de `routes` nem de `services`.

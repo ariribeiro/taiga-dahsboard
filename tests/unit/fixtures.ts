@@ -1,4 +1,4 @@
-import type { TMember, TMilestone, TStory, TTask } from "@/lib/taiga";
+import type { TMember, TMilestone, TStory, TTask } from "@/infra/taiga";
 
 export const st = (name: string, color = "#999") => ({ name, color });
 
