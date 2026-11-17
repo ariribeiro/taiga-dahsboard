@@ -142,14 +142,13 @@ export type TTask = {
   is_blocked?: boolean; blocked_note?: string;
 };
 
-// Só quem tem este papel NO PROJETO pode ver o projeto. O nome varia entre projetos
-// ("Servidor Dirti/Fiscal", "SERVIDOR/DIRTI/FISCALIZAÇÃO"...), então a regra é por palavras:
-// o papel precisa conter "servidor", "dirti" e algo que comece com "fiscal", em qualquer ordem/separador.
+// Só quem tem este papel NO PROJETO pode ver o projeto. O nome varia entre projetos, então basta o papel
+// conter "servidor", "fiscal" ou "fiscalização" (ignorando maiúsculas e acentos; "fiscal" já cobre "fiscalização").
 export const ALLOWED_ROLE = "Servidor Dirti/Fiscal";
-const words = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 export function isAllowedRole(role?: string | null): boolean {
-  const w = words(role ?? "");
-  return w.includes("servidor") && w.includes("dirti") && w.some((x) => x.startsWith("fiscal"));
+  const t = plain(role ?? "");
+  return ["servidor", "fiscal", "fiscalizacao"].some((w) => t.includes(w));
 }
 
 export async function getProjects(userId: number): Promise<TProject[]> {
