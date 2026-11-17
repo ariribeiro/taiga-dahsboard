@@ -16,6 +16,7 @@ Legenda de esforço: **P** (horas) · **M** (1 a 3 dias) · **G** (mais de 3 dia
 | Links de anexo | Só `http(s)` ou caminho relativo; `javascript:`, `data:` e `ftp:` são descartados. | Anexos maliciosos do simulador não chegam ao navegador. |
 | Dependências | **Migração para Next.js 16.4.6 e React 19** (antes: Next 14.2.15), Dependabot semanal e `engines.node >= 20.9`. | `npm audit --omit=dev`: **0 vulnerabilidades** (eram 1 crítica e 1 alta). Toda a bateria de testes repetida em produção e em desenvolvimento (Turbopack) sem regressões. |
 | Servidor de desenvolvimento | `npm run dev` agora escuta só em `127.0.0.1` (antes, em todas as interfaces). | — |
+| Redirecionamentos relativos | O login e o logout devolvem `Location` relativo (`/projects`, `/`). Antes, o endereço era montado a partir do servidor e quebrava o login ao abrir por `127.0.0.1`, por IP ou atrás de proxy HTTPS (o CSP `form-action` bloqueava o salto entre origens). | Login e logout verificados abrindo por `localhost` e `127.0.0.1`, em desenvolvimento e produção, e com cabeçalhos de proxy. |
 
 ## 🔴 Pendências de prioridade alta
 
@@ -44,7 +45,6 @@ Não há testes nem integração contínua, e a branch `main` não tem proteçã
 | H | Páginas de erro amigáveis | Um timeout do Taiga hoje vira a página 500 genérica. Criar `error.tsx` e `not-found.tsx` com mensagem e botão para tentar de novo. | P |
 | I | Observabilidade | Logs estruturados com identificador de requisição, `/api/health` e métricas de latência e erro do Taiga. | M |
 | J | Implantação | Dockerfile com `output: "standalone"`, usuário sem privilégios e orientação de HTTPS/HSTS. | P/M |
-| K | Endereço público da aplicação | Os redirecionamentos usam o `Host` da requisição (`new URL(q, req.url)`). Atrás de um proxy, usar uma variável `APP_URL` configurada. | P |
 | L | Limite também em `/api/item` | Cada abertura de modal gera ~5 chamadas ao Taiga; um limite por sessão evita amplificação. | P |
 
 ## 🟡 Governança e decisões em aberto
