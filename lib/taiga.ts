@@ -34,18 +34,15 @@ export async function taigaLogin(username: string, password: string) {
   return res.json();
 }
 
-/** GET autenticado. Em 401 tenta renovar o token uma vez. */
-export async function taigaGet<T>(path: string): Promise<T> {
+/** Requisição autenticada (renova o token uma vez em 401). `paginated`: não pede para desabilitar a paginação. */
+async function taigaFetch(path: string, paginated: boolean): Promise<Response> {
   const cur = getSession();
   if (!cur) throw new TaigaError(401, "Sem sessão");
   const { session } = cur;
 
   const doFetch = () =>
     fetch(`${API}${path}`, {
-      headers: {
-        Authorization: `Bearer ${session.authToken}`,
-        "x-disable-pagination": "True",
-      },
+      headers: { Authorization: `Bearer ${session.authToken}`, ...(paginated ? {} : { "x-disable-pagination": "True" }) },
       cache: "no-store",
     });
 
@@ -65,11 +62,27 @@ export async function taigaGet<T>(path: string): Promise<T> {
     }
   }
   if (!res.ok) throw new TaigaError(res.status, `Taiga ${res.status} em ${path}`);
-  return res.json();
+  return res;
+}
+
+/** GET autenticado, sem paginação (traz tudo). */
+export async function taigaGet<T>(path: string): Promise<T> {
+  return (await taigaFetch(path, false)).json();
+}
+
+/**
+ * GET paginado: devolve a página pedida (use ?page=N&page_size=M) e o TOTAL de itens,
+ * lido do cabeçalho x-pagination-count — permite mostrar contagens sem baixar tudo.
+ */
+export async function taigaGetPaged<T extends unknown[]>(path: string): Promise<{ data: T; count: number }> {
+  const res = await taigaFetch(path, true);
+  const data = (await res.json()) as T;
+  const h = Number(res.headers.get("x-pagination-count"));
+  return { data, count: Number.isFinite(h) && res.headers.has("x-pagination-count") ? h : data.length };
 }
 
 // ---- Tipos (apenas os campos usados) ----
-export type TProject = { id: number; name: string; slug: string; description?: string; logo_small_url?: string | null; logo_big_url?: string | null };
+export type TProject = { id: number; name: string; slug: string; description?: string; logo_small_url?: string | null; logo_big_url?: string | null; is_backlog_activated?: boolean; is_kanban_activated?: boolean };
 export type TMember = { user: number | null; full_name: string; photo: string | null; role_name: string; is_active?: boolean; is_user_active?: boolean };
 export type TMilestone = {
   id: number; name: string; slug: string;
@@ -84,6 +97,7 @@ export type TStory = {
   assigned_to_extra_info?: TUserInfo | null;
   status_extra_info: TStatusInfo; is_closed: boolean; total_points: number | null;
   is_blocked?: boolean; blocked_note?: string;
+  status?: number; created_date?: string; modified_date?: string; finish_date?: string | null;
 };
 export type TTask = {
   id: number; ref: number; subject: string; user_story: number | null;
@@ -113,3 +127,6 @@ export const getUser = (id: number) => taigaGet<TUserInfo>(`/users/${id}`);
 export type TStatsDay = { day: string; name: number | string; open_points: number | null; optimal_points: number | null };
 export type TMilestoneStats = { days?: TStatsDay[] };
 export const getMilestoneStats = (id: number) => taigaGet<TMilestoneStats>(`/milestones/${id}/stats`);
+
+export type TUsStatus = { id: number; name: string; color: string; order: number; is_closed: boolean; is_archived?: boolean; wip_limit?: number | null };
+export const getUsStatuses = (p: number) => taigaGet<TUsStatus[]>(`/userstory-statuses?project=${p}`);

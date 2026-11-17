@@ -28,3 +28,7 @@ TAIGA_URL=https://taiga-api.suaempresa.com      # API
 TAIGA_WEB_URL=https://taiga.suaempresa.com      # site (sem /project/... no final)
 ```
 Os links seguem o padrão `TAIGA_WEB_URL/project/<slug>/us/<ref>` (story) e `/task/<ref>` (task). Sem `TAIGA_WEB_URL`, os links ficam ocultos.
+
+## Projetos Kanban
+Projetos sem o módulo Scrum (ou sem nenhuma sprint) usam uma visão de fluxo: quadro por coluna com totais, itens em andamento, impedidos, parados, vazão semanal, tempo de entrega e cards por pessoa, em janelas de 14/28/56/84 dias.
+As colunas concluídas não são baixadas por inteiro: o total vem do cabeçalho `x-pagination-count` e só as páginas mais recentes (até 500 itens) são analisadas, com cache de 10 minutos. Veja `lib/kanban.ts`.

@@ -54,6 +54,7 @@ export default async function DevPage({ params, searchParams }: { params: { id: 
 
   try {
     const data = await loadSprint(pid, searchParams.sprint);
+    if (data.kind === "kanban") return shell(<><Link href={`/projects/${pid}`} className="back">← {data.project.name}</Link><p className="muted">Este projeto usa Kanban (sem sprints). Veja os itens de cada pessoa no quadro do projeto.</p></>);
     const { project, sorted, sprint } = data;
     if (!sprint) return shell(<p className="muted">Este projeto não tem sprints.</p>);
     const dev = data.devs.find((d) => d.userId === uid);

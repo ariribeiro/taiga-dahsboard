@@ -3,10 +3,15 @@ import { buildViews, pickCurrentSprint } from "./metrics";
 
 /** Carrega tudo o que as páginas de sprint/dev precisam. */
 export async function loadSprint(pid: number, sprintParam?: string, withStats = false) {
-  const [project, members, milestones] = await Promise.all([getProject(pid), getMembers(pid), getMilestones(pid)]);
+  const project = await getProject(pid);
+  // Projeto sem o módulo Scrum (backlog/sprints) desativado: usa a visão de fluxo (Kanban)
+  if (project.is_backlog_activated === false) return { kind: "kanban" as const, project, sorted: [], sprint: null as null };
+  const [members, milestones] = await Promise.all([getMembers(pid), getMilestones(pid)]);
+  // Scrum ligado, mas nunca usado (nenhuma sprint) e Kanban ativo: também usa a visão de fluxo
+  if (!milestones.length && project.is_kanban_activated) return { kind: "kanban" as const, project, sorted: [], sprint: null as null };
   const sorted = [...milestones].sort((a, b) => b.estimated_start.localeCompare(a.estimated_start));
   const sprint = milestones.find((m) => String(m.id) === sprintParam) ?? pickCurrentSprint(milestones);
-  if (!sprint) return { project, sorted, sprint: null as null };
+  if (!sprint) return { kind: "scrum" as const, project, sorted, sprint: null as null };
   const [stories, tasks, stats] = await Promise.all([
     getStories(pid, sprint.id), getTasks(pid, sprint.id),
     // burndown: se o endpoint falhar, a página segue sem o gráfico
@@ -30,5 +35,5 @@ export async function loadSprint(pid: number, sprintParam?: string, withStats = 
   }));
 
   const { devs, overview, unassigned } = buildViews(members, stories, tasks, sprint, known);
-  return { project, sorted, sprint, devs, overview, unassigned, members, stats };
+  return { kind: "scrum" as const, project, sorted, sprint, devs, overview, unassigned, members, stats };
 }

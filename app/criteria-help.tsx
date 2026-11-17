@@ -103,3 +103,62 @@ export function CriteriaHelp({ info }: { info: HelpInfo }) {
     </>
   );
 }
+
+export type KanbanHelpInfo = {
+  days: number; staleDays: number; blockedPattern: string; roles: string[] | null;
+  doneTotal: number; fetched: number; ordered: boolean; partial: boolean;
+};
+
+function KanbanDialog({ info, onClose }: { info: KanbanHelpInfo; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => { ref.current?.showModal(); }, []);
+  return (
+    <dialog ref={ref} className="modal sm help" onClose={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }}>
+      <div className="modal-in">
+        <header className="m-head">
+          <div className="m-title"><p className="muted">Ajuda · Kanban</p><h3 className="modal-t">Como os indicadores do Kanban são calculados</h3></div>
+          <div className="m-actions"><button className="modal-x ghost" onClick={() => ref.current?.close()} aria-label="Fechar">✕</button></div>
+        </header>
+        <div className="m-body help-body">
+          <section>
+            <h4 className="sec">Quadro</h4>
+            <ul>
+              <li><b>Fila:</b> a primeira coluna aberta (ex.: Novo). <b>Em andamento:</b> as demais colunas abertas, incluindo Impedimento.</li>
+              <li>Colunas concluídas e arquivadas mostram só o <b>total</b>, lido do próprio Taiga sem baixar todos os itens.</li>
+              <li>O <b>limite de WIP</b> aparece quando configurado na coluna do Taiga; passando dele, a coluna fica em vermelho.</li>
+            </ul>
+          </section>
+          <section>
+            <h4 className="sec">Indicadores</h4>
+            <ul>
+              <li><b>Parados:</b> itens em andamento sem nenhuma alteração há {info.staleDays}+ dias (data da última modificação; impedidos são contados à parte).</li>
+              <li><b>Impedidos:</b> status com nome que combine com <code>{info.blockedPattern}</code> ou story bloqueada no Taiga.</li>
+              <li><b>Concluídos:</b> itens com data de conclusão nos últimos {info.days} dias, e a comparação com os {info.days} dias anteriores.</li>
+              <li><b>Tempo de entrega:</b> da criação à conclusão, dos itens concluídos no período. A <b>mediana</b> é o valor típico; o <b>p85</b> indica que 85% dos itens entregam em até esse tempo.</li>
+              <li><b>Vazão semanal:</b> concluídos por semana; a linha tracejada é a média do período.</li>
+            </ul>
+          </section>
+          <section>
+            <h4 className="sec">Por desenvolvedor</h4>
+            <p>{info.roles ? <>Membros ativos com os papéis <i>{info.roles.join(", ")}</i>.</> : <>Todos os membros ativos.</>} Pontos só aparecem quando as stories têm pontos; stories com mais de um responsável dividem os pontos.</p>
+          </section>
+          <section>
+            <h4 className="sec">Limites dos dados</h4>
+            <p>Para não sobrecarregar o Taiga, dos <b>{info.doneTotal}</b> itens concluídos são analisados os <b>{info.fetched}</b> {info.ordered ? "mais recentes" : "primeiros devolvidos"} (até 500), e o resultado fica guardado por 10 minutos. {info.partial ? "Se o período escolhido for maior do que essa amostra cobre, a página avisa." : "Nesta consulta, todos foram analisados."}</p>
+          </section>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
+export function KanbanHelp({ info }: { info: KanbanHelpInfo }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" className="help-btn" onClick={() => setOpen(true)} aria-label="Como esses indicadores são calculados" title="Como esses indicadores são calculados">?</button>
+      {open && createPortal(<KanbanDialog info={info} onClose={() => setOpen(false)} />, document.body)}
+    </>
+  );
+}

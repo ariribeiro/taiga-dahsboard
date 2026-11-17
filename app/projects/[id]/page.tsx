@@ -5,6 +5,8 @@ import { TaigaError } from "@/lib/taiga";
 import { loadSprint } from "@/lib/sprint";
 import { paceOf, PACE_TOLERANCE, BLOCKED_STATUS_PATTERN } from "@/lib/metrics";
 import { CriteriaHelp } from "../../criteria-help";
+import { KanbanPage } from "../../kanban-page";
+import { parsePeriod } from "@/lib/periods";
 import { allowedRoleNames } from "@/lib/roles";
 import { Header } from "../../header";
 import { Burndown } from "../../burndown";
@@ -14,7 +16,7 @@ import { Avatar, Bar, Kpi, Picture, Ring, SprintPicker, fmtDate as fmt } from ".
 
 export const dynamic = "force-dynamic";
 
-export default async function ProjectPage({ params, searchParams }: { params: { id: string }; searchParams: { sprint?: string } }) {
+export default async function ProjectPage({ params, searchParams }: { params: { id: string }; searchParams: { sprint?: string; days?: string } }) {
   const cur = getSession();
   if (!cur) redirect("/");
   const pid = Number(params.id);
@@ -22,6 +24,9 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
 
   try {
     const data = await loadSprint(pid, searchParams.sprint, true);
+    if (data.kind === "kanban") {
+      return <KanbanPage project={data.project} pid={pid} userId={cur.session.userId} userName={cur.session.fullName} days={parsePeriod(searchParams.days)} />;
+    }
     const { project, sorted, sprint } = data;
     if (!sprint) {
       return (<><Header name={cur.session.fullName} /><main className="wrap"><h2>{project.name}</h2><p className="muted">Este projeto não tem sprints.</p></main></>);

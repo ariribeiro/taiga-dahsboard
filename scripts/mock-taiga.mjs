@@ -39,7 +39,28 @@ const tasks = [
   { id: 31, ref: 331, subject: "Revisar contrato da API", user_story: 2, assigned_to: 1, status_extra_info: NEW, is_closed: false },
   { id: 4, ref: 204, subject: "Teste de carga", user_story: 3, assigned_to: 1, status_extra_info: NEW, is_closed: false },
 ];
-const send = (res, code, body) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(body)); };
+// ---- projeto Kanban (id 10): 7 colunas, muitos finalizados, paginação com x-pagination-count ----
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const KST = [
+  { id: 1, name: "NOVO", color: "#70728F", order: 1, is_closed: false },
+  { id: 2, name: "EM ANDAMENTO", color: "#E47C40", order: 2, is_closed: false, wip_limit: 3 },
+  { id: 3, name: "PRONTO PARA TESTE", color: "#E4CE40", order: 3, is_closed: false },
+  { id: 4, name: "EM APROVAÇÃO", color: "#40D9E4", order: 4, is_closed: false },
+  { id: 5, name: "IMPEDIMENTO", color: "#E44057", order: 5, is_closed: false },
+  { id: 6, name: "FINALIZADO", color: "#A8E440", order: 6, is_closed: true },
+  { id: 7, name: "ARQUIVADO", color: "#A9AABC", order: 7, is_closed: true, is_archived: true },
+];
+const OWNERS = [1, 2, 3, 4, 6, null, null];
+const K = []; let kid = 1000;
+const mk = (stId, n, maxAgo, fin) => { const st = KST.find((x) => x.id === stId); for (let i = 0; i < n; i++) {
+  const o = OWNERS[Math.floor(rnd() * OWNERS.length)]; const ago = Math.floor(rnd() * maxAgo); kid++;
+  K.push({ id: kid, ref: kid - 900, subject: `Item ${kid - 900} - ${["Portal Gov.br", "Intranet", "Balcão Virtual", "PNLD", "Identidade Visual"][Math.floor(rnd() * 5)]}`, project: 10,
+    status: stId, status_extra_info: { name: st.name, color: st.color, is_closed: st.is_closed }, is_closed: st.is_closed, assigned_to: o, assigned_users: o ? [o] : [],
+    total_points: rnd() < 0.5 ? null : Math.ceil(rnd() * 5), is_blocked: false, created_date: iso(-(ago + 2 + Math.floor(rnd() * 40))) + "T10:00:00Z",
+    modified_date: iso(-ago) + "T12:00:00Z", finish_date: fin ? iso(-ago) + "T12:00:00Z" : null }); } };
+mk(1, 4, 10); mk(2, 4, 12); mk(3, 1, 3); mk(4, 13, 25); mk(5, 2, 30); mk(6, +process.env.MOCK_DONE || 300, 150, true);
+
+const send = (res, code, body, headers = {}) => { res.writeHead(code, { "Content-Type": "application/json", ...headers }); res.end(JSON.stringify(body)); };
 http.createServer((req, res) => {
   if (req.url.startsWith("/media/")) {
     if (req.url.includes("quebrada")) { res.writeHead(404); return res.end(); }
@@ -48,6 +69,7 @@ http.createServer((req, res) => {
     return res.end(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" fill="${c}"/><circle cx="20" cy="16" r="7" fill="#fff"/><rect x="8" y="26" width="24" height="10" rx="5" fill="#fff"/></svg>`);
   }
   const u = new URL(req.url, "http://x"); const p = u.pathname.replace("/api/v1", "");
+  if (process.env.MOCK_LOG && !req.url.startsWith("/media/")) console.log(req.method, req.url, req.headers["x-disable-pagination"] ? "[tudo]" : "[paginado]");
   if (p === "/auth") {
     let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => {
       const { username, password } = JSON.parse(b || "{}");
@@ -56,7 +78,7 @@ http.createServer((req, res) => {
     }); return;
   }
   if (req.headers.authorization !== "Bearer tok") return send(res, 401, {});
-  const PROJ = ["Projeto Alfa", "Projeto Beta", "Portal do Aluno", "PNLD - Programa Nacional do Livro e do Material Didático: Distribuição e Logística Integrada", "App Mobile", "Data Lake", "Sistema Legado", "Painel Executivo", "Integração MEC"].map((name, i) => ({ id: i + 1, name, slug: name.toLowerCase().replace(/\W+/g, "-"), description: i === 0 ? "Produto principal" : "", logo_small_url: i === 0 ? "http://localhost:9000/media/logo.svg" : null }));
+  const PROJ = ["Projeto Alfa", "Projeto Beta", "Portal do Aluno", "PNLD - Programa Nacional do Livro e do Material Didático: Distribuição e Logística Integrada", "App Mobile", "Data Lake", "Sistema Legado", "Painel Executivo", "Integração MEC", "Quadro Kanban"].map((name, i) => ({ id: i + 1, name, slug: name.toLowerCase().replace(/\W+/g, "-"), description: i === 0 ? "Produto principal" : "", logo_small_url: i === 0 ? "http://localhost:9000/media/logo.svg" : null, is_backlog_activated: i !== 9, is_kanban_activated: true }));
   if (p === "/projects") return send(res, 200, PROJ);
   { const pm = p.match(/^\/projects\/(\d+)$/); if (pm) { const pr = PROJ.find((x) => x.id === +pm[1]); return pr ? send(res, 200, pr) : send(res, 404, {}); } }
   if (p === "/users/233") return send(res, 200, { id: 233, username: "paula", full_name_display: "Paula Externa" });
@@ -65,6 +87,7 @@ http.createServer((req, res) => {
     return send(res, 200, { days: Array.from({ length: n }, (_, i) => ({ day: iso(-7 + i), name: i + 1, open_points: i < 8 ? open[i] : null, optimal_points: Math.round(total * (1 - i / (n - 1)) * 10) / 10 })) });
   }
   if (p === "/memberships") return send(res, 200, members);
+  if (p === "/milestones" && u.searchParams.get("project") === "9") return send(res, 200, []); // Scrum ligado, sem sprints
   if (p === "/milestones") return send(res, 200, milestones);
   let m;
   if (p.endsWith("/attachments")) return send(res, 200, [
@@ -75,8 +98,8 @@ http.createServer((req, res) => {
     { id: 3, name: "especificacao.pdf", attached_file: "attachments/b/2/hash2/especificacao.pdf", url: "http://localhost:9000/media/attachments/b/2/hash2/especificacao.pdf?token=abc", size: 3145728, is_deprecated: false },
     { id: 2, name: "foto-quebrada.png", attached_file: "http://localhost:9000/media/quebrada.png", size: 1000, is_deprecated: false },
     { id: 4, name: "antigo.png", attached_file: "/media/x.png", size: 1, is_deprecated: true }]);  if ((m = p.match(/^\/userstories\/(\d+)$/))) {
-    const st = stories.find((x) => x.id === +m[1]); if (!st) return send(res, 404, {});
-    return send(res, 200, { ...st, project: 1, project_extra_info: { slug: "projeto-alfa" }, description: "**PNLD–HU001: Integração com API**\n\n## COMO\nSistema PNLD\n\n## QUERO\nConsumir a API `PDDE_INTERATIVO` via [APIGateway](https://exemplo.com/gateway), usando o CPF do gestor.\n\n## Critérios\n- [x] filtro por sprint\n- [ ] exportar PDF\n- Item **importante**\n\n| Campo | Tipo |\n|---|---|\n| cpf | string |\n\n> Atenção ao timeout\n\n![relativa](/media/ana.svg)\n\n<img src=\"http://localhost:9000/media/logo.svg\" width=\"80\" onerror=\"alert(1)\"> HTML cru\n\n![quebrada](http://localhost:9000/media/quebrada.png)\n\n```json\n{\"ok\": true}\n```", tags: [["frontend", "#5b5bf0"], ["relatorios", null]],
+    const st = stories.find((x) => x.id === +m[1]) ?? K.find((x) => x.id === +m[1]); if (!st) return send(res, 404, {});
+    return send(res, 200, { ...st, project: st.project ?? 1, project_extra_info: { slug: st.project === 10 ? "quadro-kanban" : "projeto-alfa" }, description: "**PNLD–HU001: Integração com API**\n\n## COMO\nSistema PNLD\n\n## QUERO\nConsumir a API `PDDE_INTERATIVO` via [APIGateway](https://exemplo.com/gateway), usando o CPF do gestor.\n\n## Critérios\n- [x] filtro por sprint\n- [ ] exportar PDF\n- Item **importante**\n\n| Campo | Tipo |\n|---|---|\n| cpf | string |\n\n> Atenção ao timeout\n\n![relativa](/media/ana.svg)\n\n<img src=\"http://localhost:9000/media/logo.svg\" width=\"80\" onerror=\"alert(1)\"> HTML cru\n\n![quebrada](http://localhost:9000/media/quebrada.png)\n\n```json\n{\"ok\": true}\n```", tags: [["frontend", "#5b5bf0"], ["relatorios", null]],
       due_date: iso(5), created_date: iso(-20) + "T10:00:00Z", modified_date: iso(-1) + "T15:30:00Z", is_blocked: st.id === 2, blocked_note: "Aguardando API de dados",
       owner_extra_info: { full_name_display: "Ana Souza", photo: null }, assigned_to_extra_info: st.assigned_to ? { id: st.assigned_to, full_name_display: "Ana Souza" } : null });
   }
@@ -86,6 +109,15 @@ http.createServer((req, res) => {
       user_story_extra_info: { ref: stories.find((x) => x.id === t.user_story)?.ref, subject: stories.find((x) => x.id === t.user_story)?.subject } });
   }
   if (p.startsWith("/history/")) return send(res, 200, [{ id: "a", user: { name: "Bruno Lima", photo: null }, created_at: iso(-3) + "T14:00:00Z", comment: "Subi o **protótipo** no Figma.\nPreciso de revisão — veja [aqui](https://exemplo.com)." }, { id: "b", user: { name: "Carla Dias" }, created_at: iso(-2) + "T09:10:00Z", comment: "" }]);
+  if (p === "/userstory-statuses") return send(res, 200, KST);
+  if (p === "/userstories" && u.searchParams.get("project") === "10") {
+    let list = K; const st = u.searchParams.get("status"); if (st) list = list.filter((x) => x.status === +st);
+    const ob = u.searchParams.get("order_by");
+    if (ob) { if (process.env.MOCK_NO_ORDER) return send(res, 400, { _error_message: "invalid order_by" }); if (ob === "-modified_date") list = [...list].sort((a, b) => b.modified_date.localeCompare(a.modified_date)); }
+    if (req.headers["x-disable-pagination"]) return send(res, 200, list);
+    const size = +u.searchParams.get("page_size") || 30, page = +u.searchParams.get("page") || 1;
+    return send(res, 200, list.slice((page - 1) * size, page * size), { "x-pagination-count": String(list.length), "x-paginated": "true" });
+  }
   if (p === "/userstories") return send(res, 200, stories);
   if (p === "/tasks") { const us = u.searchParams.get("user_story"); return send(res, 200, us ? tasks.filter((t) => t.user_story === +us) : tasks); }
   send(res, 404, {});

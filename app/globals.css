@@ -266,3 +266,20 @@ button.ghost:hover{background:var(--soft);transform:none}
 /* link para o Taiga */
 .ext{display:inline-block;margin-left:2px;padding:0 5px;border-radius:6px;color:var(--muted);font-size:13px;line-height:1.5;text-decoration:none;opacity:.75}
 .ext:hover{color:var(--accent);background:var(--soft);opacity:1}
+
+/* Kanban */
+.kcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:6px}
+.kcol{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:10px;background:var(--soft);border-top:3px solid var(--c)}
+.kcol-n{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);overflow-wrap:anywhere}
+.kcol b{font-size:24px;line-height:1.1}.kcol-s{font-size:11px}
+.kcol.over{background:color-mix(in srgb,var(--bad) 10%,var(--soft))}.kcol.over b,.kcol.over .kcol-s{color:var(--bad)}
+.k2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media(max-width:860px){.k2{grid-template-columns:1fr}}
+.kitems li{flex-wrap:wrap}.kitems .subj{flex:1 1 220px;min-width:0}.krow-blocked .ref{color:var(--bad)}
+.kdev{padding:0;margin:0;align-self:start;transition:.18s}
+.kdev>summary{list-style:none;cursor:pointer;padding:20px;display:block}.kdev>summary::-webkit-details-marker{display:none}
+.kdev:hover{border-color:var(--accent)}.kdev[open]{border-color:var(--accent)}
+.kdev>.kitems{padding:0 20px 14px;border-top:1px solid var(--line)}
+.kdev.blocked{border-color:color-mix(in srgb,var(--bad) 55%,var(--line));box-shadow:var(--shadow),inset 4px 0 0 var(--bad)}
+.kdev.idle{opacity:.65}
+.kbar{fill:var(--accent)}.kbar-n{fill:var(--fg);font-weight:600}
