@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { TaigaError } from "@/lib/taiga";
+import { TaigaError, hasProjectAccess } from "@/lib/taiga";
+import { Forbidden } from "../../../../forbidden";
 import { loadSprint } from "@/lib/sprint";
 import { taigaWebLink } from "@/lib/links";
 import { ItemButton } from "../../../../item-modal";
@@ -55,6 +56,7 @@ export default async function DevPage(props: { params: Promise<{ id: string; use
   const shell = (children: React.ReactNode) => (<><Header name={cur.session.fullName} /><main className="wrap">{children}</main></>);
 
   try {
+    if (!(await hasProjectAccess(cur.session.userId, pid))) return <Forbidden name={cur.session.fullName} />;
     const data = await loadSprint(pid, searchParams.sprint);
     if (data.kind === "kanban") return shell(<><Link href={`/projects/${pid}`} className="back">← {data.project.name}</Link><p className="muted">Este projeto usa Kanban (sem sprints). Veja os itens de cada pessoa no quadro do projeto.</p></>);
     const { project, sorted, sprint } = data;

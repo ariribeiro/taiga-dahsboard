@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { getMembers, getUser, taigaGet, TaigaError, TAIGA_URL } from "@/lib/taiga";
+import { getMembers, getUser, hasProjectAccess, taigaGet, TaigaError, TAIGA_URL } from "@/lib/taiga";
 import type { ItemDetail } from "@/lib/item";
 import { taigaWebLink } from "@/lib/links";
 
@@ -10,12 +10,14 @@ export const dynamic = "force-dynamic";
 const nm = (u: any): string | null => u?.full_name_display || u?.full_name || u?.name || u?.username || null;
 
 export async function GET(req: Request) {
-  if (!(await getSession())) return NextResponse.json({ error: "Sem sessão" }, { status: 401 });
+  const cur = await getSession();
+  if (!cur) return NextResponse.json({ error: "Sem sessão" }, { status: 401 });
   const q = new URL(req.url).searchParams;
   const kind = q.get("kind"), id = Number(q.get("id")), project = Number(q.get("project"));
   if ((kind !== "us" && kind !== "task") || !Number.isInteger(id) || !Number.isInteger(project)) {
     return NextResponse.json({ error: "Parâmetros inválidos" }, { status: 400 });
   }
+  if (!(await hasProjectAccess(cur.session.userId, project).catch(() => false))) return NextResponse.json({ error: "Acesso restrito" }, { status: 403 });
   const base = kind === "us" ? "userstories" : "tasks";
   const hist = kind === "us" ? "userstory" : "task";
 
