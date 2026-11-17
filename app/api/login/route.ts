@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { taigaLogin, TaigaError } from "@/lib/taiga";
 import { createSession } from "@/lib/session";
+import { clientIp, loginLimiters } from "@/lib/ratelimit";
 
 export async function POST(req: Request) {
   const form = await req.formData();
@@ -8,8 +9,19 @@ export async function POST(req: Request) {
   const password = String(form.get("password") ?? "");
   const back = (q: string) => NextResponse.redirect(new URL(q, req.url), 303);
   if (!username || !password) return back("/?erro=1");
+
+  // Freio de força bruta: bloqueia ANTES de consultar o Taiga (por usuário e por IP).
+  const userKey = username.toLowerCase();
+  const ip = clientIp(req);
+  const wait = Math.max(loginLimiters.user.retryAfter(userKey), loginLimiters.ip.retryAfter(ip));
+  if (wait > 0) {
+    console.warn(`[login] bloqueado por excesso de tentativas (ip=${ip}, libera em ${Math.ceil(wait / 1000)}s)`);
+    return back(`/?erro=LIMITE&m=${Math.max(1, Math.ceil(wait / 60_000))}`);
+  }
+
   try {
     const u = await taigaLogin(username, password);
+    loginLimiters.user.reset(userKey);
     createSession({
       authToken: u.auth_token, refresh: u.refresh, userId: u.id,
       fullName: u.full_name_display ?? u.full_name ?? u.username,
@@ -17,6 +29,8 @@ export async function POST(req: Request) {
     });
     return back("/projects");
   } catch (e) {
+    // só credenciais recusadas contam como tentativa; falha de rede não penaliza ninguém
+    if (e instanceof TaigaError && e.message === "CRED") { loginLimiters.user.fail(userKey); loginLimiters.ip.fail(ip); }
     return back(`/?erro=${e instanceof TaigaError ? e.message : "REDE"}`);
   }
 }

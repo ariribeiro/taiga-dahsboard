@@ -162,6 +162,10 @@ Tudo em `.env.local` (veja o `.env.example`). **Só `TAIGA_URL` é obrigatória.
 | `DEV_ROLES` | Desenvolvedor, Analista de negócio e requisitos, Analista de UX, Analista de teste de qualidade, Arquiteto, Administrador de dados, Estagiário | Papéis do Taiga que ganham card, separados por vírgula. `*` mostra todos. Ignora maiúsculas, acentos e plural. |
 | `BLOCKED_STATUS_REGEX` | `imped\|bloquead\|blocked` | Nomes de **status** que significam impedimento (além do bloqueio nativo do Taiga). |
 | `KANBAN_STALE_DAYS` | `7` | Dias sem alteração para um item do Kanban contar como *parado*. |
+| `LOGIN_MAX_FAILURES` / `LOGIN_WINDOW_MINUTES` | `8` / `15` | Tentativas de login com senha errada por usuário, dentro da janela, antes de bloquear. |
+| `TRUST_PROXY` | `0` | `1` somente atrás de proxy reverso que informe o IP real (`X-Forwarded-For`). |
+| `SESSION_IDLE_MINUTES` / `SESSION_MAX_HOURS` | `120` / `12` | A sessão expira após esse tempo sem uso, e dura no máximo isso desde o login. |
+| `TAIGA_TIMEOUT_MS` / `TAIGA_MAX_CONCURRENCY` | `20000` / `8` | Tempo máximo de cada chamada ao Taiga e quantas podem ocorrer ao mesmo tempo. |
 
 ## 🔒 Como funciona
 
@@ -184,6 +188,10 @@ sequenceDiagram
 - **A senha passa só pelo servidor** e não é guardada. Os tokens ficam na **memória do servidor**; o navegador recebe apenas um cookie de sessão `HttpOnly` (`Secure` em produção).
 - **Permissões do Taiga valem sempre**: o app usa o token da própria pessoa, então ninguém vê o que não poderia ver no Taiga.
 - **Somente leitura**: nenhuma requisição altera dados no Taiga.
+- **Freio de força bruta**: o login é bloqueado após poucas senhas erradas (por usuário e por IP), antes de consultar o Taiga.
+- **Sessões com prazo**: expiram por inatividade e por duração máxima; um novo login encerra a anterior; em produção o cookie usa o prefixo `__Host-`.
+- **Cabeçalhos de segurança**: CSP, proteção contra clickjacking, `nosniff`, `Referrer-Policy` e HSTS em produção.
+- **Chamadas ao Taiga protegidas**: timeout, retentativas em falhas temporárias e limite de requisições simultâneas.
 - **Markdown seguro**: descrições e comentários viram elementos React, e HTML embutido é sanitizado (sem scripts nem eventos).
 - **Imagens e anexos** são carregados pelo **navegador** direto do Taiga; o navegador precisa alcançar o endereço da mídia.
 - **O que fica guardado**: sessão (memória do servidor), lista de projetos (5 min), finalizados do Kanban (10 min) e **favoritos no `localStorage`** do navegador, por usuário.
@@ -259,12 +267,15 @@ npm start
 
 - Sirva por **HTTPS** (proxy reverso). Em produção o cookie de sessão é `Secure` e não funciona em HTTP puro.
 - As sessões ficam **em memória**: reiniciar o servidor desloga todo mundo, e só há suporte a **uma instância**. Para várias instâncias, troque o armazenamento em `lib/session.ts` por Redis.
+- Atrás de um proxy reverso, defina `TRUST_PROXY=1` para o limite de tentativas usar o IP real de cada pessoa.
+- `npm run dev` escuta só em `127.0.0.1`; não exponha o servidor de desenvolvimento na rede.
 
 ## ⚠️ Limitações conhecidas
 
 - **Sprints fechadas usam o estado atual:** o Taiga não guarda uma "foto" do fechamento, então uma story concluída depois do fim da sprint aparece como entregue nela.
 - **Burndown só no nível da sprint** (não por pessoa).
 - **No Kanban, "parado" usa a última modificação**, e um comentário de outra pessoa reinicia a contagem. O tempo real em cada coluna exigiria o histórico de cada item.
+- **Next.js 14 sem correções futuras:** o `npm audit` ainda aponta vulnerabilidades que só têm correção no Next 16 (mitigadas: otimizador de imagens desligado e servidor de desenvolvimento só local). A migração é a próxima prioridade.
 - **Não há testes automatizados** ainda; a validação foi feita com o Taiga simulado e na prática.
 
 ## 🔭 Roadmap
@@ -273,6 +284,8 @@ npm start
 - [ ] **Fluxo acumulado (CFD) e tempo por coluna** no Kanban (exige guardar dados no servidor).
 - [ ] Sessões em **Redis** para múltiplas instâncias.
 - [ ] Testes automatizados para as regras de cálculo.
+
+A lista completa de melhorias de arquitetura e segurança, com prioridades e esforço, está em [`docs/MELHORIAS-PENDENTES.md`](docs/MELHORIAS-PENDENTES.md).
 
 ---
 

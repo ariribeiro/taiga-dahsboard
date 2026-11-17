@@ -10,29 +10,57 @@ export type Session = {
   photo: string | null;
 };
 
-// Armazenamento em memória (v1). Para produção/múltiplas instâncias, troque por Redis.
-const g = globalThis as unknown as { __sessions?: Map<string, Session> };
-const store = (g.__sessions ??= new Map<string, Session>());
+type Stored = { session: Session; created: number; seen: number };
 
-const COOKIE = "tdv_sid";
+// Armazenamento em memória. Para várias instâncias, troque por Redis (veja docs/MELHORIAS-PENDENTES.md).
+const g = globalThis as unknown as { __sessions?: Map<string, Stored> };
+const store = (g.__sessions ??= new Map<string, Stored>());
+
+const num = (v: string | undefined, d: number) => (Number(v) > 0 ? Number(v) : d);
+const MAX_AGE_MS = num(process.env.SESSION_MAX_HOURS, 12) * 3_600_000;       // duração máxima, a contar do login
+const IDLE_MS = num(process.env.SESSION_IDLE_MINUTES, 120) * 60_000;          // expira após esse tempo sem uso
+const MAX_SESSIONS = 5000;                                                      // teto de memória
+
+// Em produção (HTTPS) o prefixo __Host- obriga Secure + Path=/ e impede o cookie de ser sobrescrito por subdomínios.
+const COOKIE = process.env.NODE_ENV === "production" ? "__Host-tdv_sid" : "tdv_sid";
+
+const expired = (e: Stored, now: number) => now - e.created > MAX_AGE_MS || now - e.seen > IDLE_MS;
+
+let lastSweep = 0;
+function sweep(now: number) {
+  if (now - lastSweep < 60_000) return; // no máximo 1x por minuto
+  lastSweep = now;
+  for (const [k, e] of store) if (expired(e, now)) store.delete(k);
+}
 
 export function createSession(s: Session) {
+  const now = Date.now();
+  sweep(now);
+  const old = cookies().get(COOKIE)?.value;
+  if (old) store.delete(old); // um novo login encerra a sessão anterior deste navegador
+  while (store.size >= MAX_SESSIONS) store.delete(store.keys().next().value as string); // descarta a mais antiga
+
   const sid = randomBytes(32).toString("hex");
-  store.set(sid, s);
+  store.set(sid, { session: s, created: now, seen: now });
   cookies().set(COOKIE, sid, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 12,
+    maxAge: Math.floor(MAX_AGE_MS / 1000),
   });
 }
 
 export function getSession(): { sid: string; session: Session } | null {
   const sid = cookies().get(COOKIE)?.value;
   if (!sid) return null;
-  const session = store.get(sid);
-  return session ? { sid, session } : null;
+  const now = Date.now();
+  sweep(now);
+  const e = store.get(sid);
+  if (!e) return null;
+  if (expired(e, now)) { store.delete(sid); return null; }
+  e.seen = now; // janela deslizante: cada uso renova o tempo de inatividade
+  return { sid, session: e.session };
 }
 
 export function destroySession() {

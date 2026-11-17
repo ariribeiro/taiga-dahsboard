@@ -7,10 +7,11 @@ const MSG: Record<string, string> = {
   CRED: "Usuário ou senha inválidos (o Taiga recusou as credenciais).",
   CONFIG: "TAIGA_URL não está configurada. Defina no arquivo .env.local e reinicie o servidor.",
   REDE: "Não consegui conectar ao Taiga. Verifique a TAIGA_URL, a rede/VPN e veja o terminal do servidor.",
+  LIMITE: "Muitas tentativas de login. Aguarde alguns minutos e tente de novo.",
   CERT: "Erro de certificado HTTPS do Taiga. Veja a nota sobre NODE_EXTRA_CA_CERTS no README.",
 };
 
-export default function Home({ searchParams }: { searchParams: { erro?: string } }) {
+export default function Home({ searchParams }: { searchParams: { erro?: string; m?: string } }) {
   if (getSession()) redirect("/projects");
   return (
     <main className="login-page">
@@ -27,7 +28,7 @@ export default function Home({ searchParams }: { searchParams: { erro?: string }
       <form className="card login" method="post" action="/api/login">
         <h2>Entrar</h2>
         <p className="muted">Use seu usuário e senha do Taiga.</p>
-        {searchParams.erro && <p className="alert">{MSG[searchParams.erro] ?? MSG.REDE}</p>}
+        {searchParams.erro && <p className="alert">{searchParams.erro === "LIMITE" ? `Muitas tentativas de login. Tente novamente em ${Math.min(60, Math.max(1, Math.trunc(Number(searchParams.m)) || 1))} min.` : MSG[searchParams.erro] ?? MSG.REDE}</p>}
         <label>Usuário ou e-mail<input name="username" autoComplete="username" required autoFocus /></label>
         <label>Senha<input name="password" type="password" autoComplete="current-password" required /></label>
         <button type="submit">Entrar</button>

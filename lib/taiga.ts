@@ -1,7 +1,16 @@
 import { getSession } from "./session";
+import { Semaphore } from "./limit";
 
 export const TAIGA_URL = (process.env.TAIGA_URL ?? "").replace(/\/+$/, "");
 const API = `${TAIGA_URL}/api/v1`;
+
+const num = (v: string | undefined, d: number) => (Number(v) > 0 ? Number(v) : d);
+const TIMEOUT_MS = num(process.env.TAIGA_TIMEOUT_MS, 20_000);       // tempo máximo por requisição
+const RETRIES = 2;                                                    // retentativas em falhas temporárias (só GET)
+const gl = globalThis as unknown as { __taigaSem?: Semaphore };
+const sem = (gl.__taigaSem ??= new Semaphore(num(process.env.TAIGA_MAX_CONCURRENCY, 8))); // requisições simultâneas ao Taiga
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const isTimeout = (e: unknown) => e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError");
 
 export class TaigaError extends Error {
   constructor(public status: number, message: string) {
@@ -18,6 +27,7 @@ export async function taigaLogin(username: string, password: string) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "normal", username, password }),
       cache: "no-store",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch (e) {
     const cause = (e as { cause?: { code?: string; message?: string } }).cause;
@@ -34,6 +44,34 @@ export async function taigaLogin(username: string, password: string) {
   return res.json();
 }
 
+/**
+ * GET com limite de concorrência, timeout e retentativas (429/502/503/504 e falhas de rede) com espera crescente.
+ * Timeout não é retentado: repetir só multiplicaria a espera do usuário.
+ */
+async function limitedGet(url: string, headers: Record<string, string>): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const r = await sem.run(() =>
+      fetch(url, { headers, cache: "no-store", signal: AbortSignal.timeout(TIMEOUT_MS) }).then((res) => ({ res }), (err: unknown) => ({ err })),
+    );
+    if ("res" in r) {
+      if (![429, 502, 503, 504].includes(r.res.status) || attempt >= RETRIES) return r.res;
+      const ra = Number(r.res.headers.get("retry-after"));
+      await r.res.body?.cancel().catch(() => {});
+      await sleep(Number.isFinite(ra) && ra > 0 ? Math.min(ra * 1000, 3000) : 300 * 3 ** attempt);
+      continue;
+    }
+    if (isTimeout(r.err)) throw new TaigaError(504, "Taiga demorou demais para responder");
+    if (attempt >= RETRIES) throw new TaigaError(502, "Falha de rede ao consultar o Taiga");
+    await sleep(300 * 3 ** attempt);
+  }
+}
+
+/** Lê o JSON; o timeout também vale enquanto o corpo é recebido. */
+async function readJson<T>(res: Response): Promise<T> {
+  try { return (await res.json()) as T; }
+  catch (e) { throw isTimeout(e) ? new TaigaError(504, "Taiga demorou demais para responder") : e; }
+}
+
 /** Requisição autenticada (renova o token uma vez em 401). `paginated`: não pede para desabilitar a paginação. */
 async function taigaFetch(path: string, paginated: boolean): Promise<Response> {
   const cur = getSession();
@@ -41,10 +79,7 @@ async function taigaFetch(path: string, paginated: boolean): Promise<Response> {
   const { session } = cur;
 
   const doFetch = () =>
-    fetch(`${API}${path}`, {
-      headers: { Authorization: `Bearer ${session.authToken}`, ...(paginated ? {} : { "x-disable-pagination": "True" }) },
-      cache: "no-store",
-    });
+    limitedGet(`${API}${path}`, { Authorization: `Bearer ${session.authToken}`, ...(paginated ? {} : { "x-disable-pagination": "True" }) });
 
   let res = await doFetch();
   if (res.status === 401 && session.refresh) {
@@ -53,8 +88,9 @@ async function taigaFetch(path: string, paginated: boolean): Promise<Response> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh: session.refresh }),
       cache: "no-store",
-    });
-    if (r.ok) {
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    }).catch(() => null);
+    if (r?.ok) {
       const j = await r.json();
       session.authToken = j.auth_token ?? session.authToken;
       session.refresh = j.refresh ?? session.refresh;
@@ -67,7 +103,7 @@ async function taigaFetch(path: string, paginated: boolean): Promise<Response> {
 
 /** GET autenticado, sem paginação (traz tudo). */
 export async function taigaGet<T>(path: string): Promise<T> {
-  return (await taigaFetch(path, false)).json();
+  return readJson<T>(await taigaFetch(path, false));
 }
 
 /**
@@ -76,7 +112,7 @@ export async function taigaGet<T>(path: string): Promise<T> {
  */
 export async function taigaGetPaged<T extends unknown[]>(path: string): Promise<{ data: T; count: number }> {
   const res = await taigaFetch(path, true);
-  const data = (await res.json()) as T;
+  const data = await readJson<T>(res);
   const h = Number(res.headers.get("x-pagination-count"));
   return { data, count: Number.isFinite(h) && res.headers.has("x-pagination-count") ? h : data.length };
 }

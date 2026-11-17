@@ -61,7 +61,23 @@ const mk = (stId, n, maxAgo, fin) => { const st = KST.find((x) => x.id === stId)
 mk(1, 4, 10); mk(2, 4, 12); mk(3, 1, 3); mk(4, 13, 25); mk(5, 2, 30); mk(6, +process.env.MOCK_DONE || 300, 150, true);
 
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { "Content-Type": "application/json", ...headers }); res.end(JSON.stringify(body)); };
+// ---- modos de falha para testar o cliente (só para desenvolvimento) ----
+//  MOCK_DELAY_MS=200  atraso em cada resposta | MOCK_FLAKY=1  cada URL falha 1x com 503
+//  MOCK_HANG=/history  nunca responde a esse caminho | GET /__stats  maior nº de requisições simultâneas
+let inflight = 0, maxInflight = 0; const seenUrls = new Set();
 http.createServer((req, res) => {
+  if (req.url === "/__stats") return send(res, 200, { maxInflight });
+  if (req.url === "/__reset") { maxInflight = 0; seenUrls.clear(); return send(res, 200, {}); }
+  if (req.url.startsWith("/api/v1/") && !req.url.startsWith("/api/v1/auth")) {
+    if (process.env.MOCK_HANG && req.url.includes(process.env.MOCK_HANG)) return; // nunca responde
+    if (process.env.MOCK_FLAKY && !seenUrls.has(req.url)) { seenUrls.add(req.url); return send(res, 503, { _error_message: "indisponível" }, { "Retry-After": "0" }); }
+    inflight++; maxInflight = Math.max(maxInflight, inflight); res.on("close", () => { inflight--; });
+    if (process.env.MOCK_DELAY_MS) return setTimeout(() => handle(req, res), +process.env.MOCK_DELAY_MS);
+  }
+  handle(req, res);
+}).listen(9000, () => console.log("Mock Taiga em http://localhost:9000"));
+
+function handle(req, res) {
   if (req.url.startsWith("/media/")) {
     if (req.url.includes("quebrada")) { res.writeHead(404); return res.end(); }
     const c = req.url.includes("logo") ? "#f59e0b" : "#0ea5e9";
@@ -97,7 +113,9 @@ http.createServer((req, res) => {
     { id: 6, name: "tela-inicial.svg", attached_file: "attachments/d/4/hash4/tela-inicial.svg", size: 8000, is_deprecated: false },
     { id: 3, name: "especificacao.pdf", attached_file: "attachments/b/2/hash2/especificacao.pdf", url: "http://localhost:9000/media/attachments/b/2/hash2/especificacao.pdf?token=abc", size: 3145728, is_deprecated: false },
     { id: 2, name: "foto-quebrada.png", attached_file: "http://localhost:9000/media/quebrada.png", size: 1000, is_deprecated: false },
-    { id: 4, name: "antigo.png", attached_file: "/media/x.png", size: 1, is_deprecated: true }]);  if ((m = p.match(/^\/userstories\/(\d+)$/))) {
+    { id: 4, name: "antigo.png", attached_file: "/media/x.png", size: 1, is_deprecated: true },
+    { id: 7, name: "malicioso.png", attached_file: "javascript:alert(1)", url: "javascript:alert(1)", size: 1, is_deprecated: false },
+    { id: 8, name: "ftp.pdf", attached_file: "ftp://servidor/arquivo.pdf", size: 1, is_deprecated: false }]);  if ((m = p.match(/^\/userstories\/(\d+)$/))) {
     const st = stories.find((x) => x.id === +m[1]) ?? K.find((x) => x.id === +m[1]); if (!st) return send(res, 404, {});
     return send(res, 200, { ...st, project: st.project ?? 1, project_extra_info: { slug: st.project === 10 ? "quadro-kanban" : "projeto-alfa" }, description: "**PNLD–HU001: Integração com API**\n\n## COMO\nSistema PNLD\n\n## QUERO\nConsumir a API `PDDE_INTERATIVO` via [APIGateway](https://exemplo.com/gateway), usando o CPF do gestor.\n\n## Critérios\n- [x] filtro por sprint\n- [ ] exportar PDF\n- Item **importante**\n\n| Campo | Tipo |\n|---|---|\n| cpf | string |\n\n> Atenção ao timeout\n\n![relativa](/media/ana.svg)\n\n<img src=\"http://localhost:9000/media/logo.svg\" width=\"80\" onerror=\"alert(1)\"> HTML cru\n\n![quebrada](http://localhost:9000/media/quebrada.png)\n\n```json\n{\"ok\": true}\n```", tags: [["frontend", "#5b5bf0"], ["relatorios", null]],
       due_date: iso(5), created_date: iso(-20) + "T10:00:00Z", modified_date: iso(-1) + "T15:30:00Z", is_blocked: st.id === 2, blocked_note: "Aguardando API de dados",
@@ -121,4 +139,4 @@ http.createServer((req, res) => {
   if (p === "/userstories") return send(res, 200, stories);
   if (p === "/tasks") { const us = u.searchParams.get("user_story"); return send(res, 200, us ? tasks.filter((t) => t.user_story === +us) : tasks); }
   send(res, 404, {});
-}).listen(9000, () => console.log("Mock Taiga em http://localhost:9000"));
+}

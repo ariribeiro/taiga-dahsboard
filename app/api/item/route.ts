@@ -52,7 +52,9 @@ export async function GET(req: Request) {
     // Endereço de download do anexo. O Taiga manda "url" (completa, às vezes com token) e "attached_file"
     // (às vezes só um caminho relativo ao MEDIA_ROOT, ex.: "attachments/a/b/hash/arquivo.pdf").
     const attUrl = (a: any): string => {
-      const cands = [a.url, a.attached_file].filter((v) => typeof v === "string" && v) as string[];
+      // só aceita http(s) ou caminho relativo: descarta javascript:, data:, ftp: etc.
+      const cands = ([a.url, a.attached_file].filter((v) => typeof v === "string" && v) as string[])
+        .filter((v) => /^https?:\/\//i.test(v) || !/^[a-z][a-z0-9+.-]*:/i.test(v));
       const full = cands.find((v) => /^https?:\/\//i.test(v)) ?? cands.find((v) => v.startsWith("//"));
       if (full) return full.startsWith("//") ? "https:" + full : full;
       const rel = cands[0];
