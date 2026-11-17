@@ -215,6 +215,8 @@ button.ghost:hover{background:var(--soft);transform:none}
 .psw-item:hover{background:var(--soft);transform:none;filter:none}.psw-item.on{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-weight:600}
 .psw-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}.psw-check{margin-left:auto}
 .psw-empty{margin:8px 10px}
+.psw-row{display:flex;align-items:center;gap:2px;min-width:0}.psw-row .psw-item{flex:1;min-width:0}
+.psw-star{position:static;flex:none;width:30px;height:30px;font-size:18px}
 @media(max-width:700px){.brand strong{display:none}.psw-btn{max-width:48vw}}
 @media(max-width:700px){.psw{position:static}.psw-menu{left:14px;right:14px;width:auto;top:calc(100% + 8px)}}
 
