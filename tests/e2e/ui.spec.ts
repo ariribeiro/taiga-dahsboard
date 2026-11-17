@@ -2,6 +2,14 @@ import { expect, test } from "@playwright/test";
 import { loginOk, unique } from "./helpers";
 
 test.describe("projetos", () => {
+  test("acesso: projeto em que o usuário não é Servidor Dirti/Fiscal fica bloqueado", async ({ page }) => {
+    await loginOk(page, unique("u"));
+    await page.goto("/projects/77");
+    await expect(page.getByRole("heading", { name: "Acesso restrito" })).toBeVisible();
+    await page.goto("/projects/1");
+    await expect(page.getByRole("heading", { name: "Acesso restrito" })).toHaveCount(0);
+  });
+
   test("favoritos: marcar sobe o projeto para o topo e persiste ao recarregar", async ({ page }) => {
     await loginOk(page, unique("u"));
     const nomes = () => page.locator(".pcard strong").allInnerTexts();
