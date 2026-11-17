@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 const nm = (u: any): string | null => u?.full_name_display || u?.full_name || u?.name || u?.username || null;
 
 export async function GET(req: Request) {
-  if (!getSession()) return NextResponse.json({ error: "Sem sessão" }, { status: 401 });
+  if (!(await getSession())) return NextResponse.json({ error: "Sem sessão" }, { status: 401 });
   const q = new URL(req.url).searchParams;
   const kind = q.get("kind"), id = Number(q.get("id")), project = Number(q.get("project"));
   if ((kind !== "us" && kind !== "task") || !Number.isInteger(id) || !Number.isInteger(project)) {

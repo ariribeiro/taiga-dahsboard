@@ -33,16 +33,17 @@ function sweep(now: number) {
   for (const [k, e] of store) if (expired(e, now)) store.delete(k);
 }
 
-export function createSession(s: Session) {
+export async function createSession(s: Session) {
+  const jar = await cookies(); // Next 15+: cookies() é assíncrono
   const now = Date.now();
   sweep(now);
-  const old = cookies().get(COOKIE)?.value;
+  const old = jar.get(COOKIE)?.value;
   if (old) store.delete(old); // um novo login encerra a sessão anterior deste navegador
   while (store.size >= MAX_SESSIONS) store.delete(store.keys().next().value as string); // descarta a mais antiga
 
   const sid = randomBytes(32).toString("hex");
   store.set(sid, { session: s, created: now, seen: now });
-  cookies().set(COOKIE, sid, {
+  jar.set(COOKIE, sid, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -51,8 +52,8 @@ export function createSession(s: Session) {
   });
 }
 
-export function getSession(): { sid: string; session: Session } | null {
-  const sid = cookies().get(COOKIE)?.value;
+export async function getSession(): Promise<{ sid: string; session: Session } | null> {
+  const sid = (await cookies()).get(COOKIE)?.value;
   if (!sid) return null;
   const now = Date.now();
   sweep(now);
@@ -63,8 +64,9 @@ export function getSession(): { sid: string; session: Session } | null {
   return { sid, session: e.session };
 }
 
-export function destroySession() {
-  const sid = cookies().get(COOKIE)?.value;
+export async function destroySession() {
+  const jar = await cookies();
+  const sid = jar.get(COOKIE)?.value;
   if (sid) store.delete(sid);
-  cookies().delete(COOKIE);
+  jar.delete(COOKIE);
 }

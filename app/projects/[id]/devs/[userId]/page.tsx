@@ -44,8 +44,10 @@ function Group({ title, items, kind, project, webLink }: { title: string; items:
   );
 }
 
-export default async function DevPage({ params, searchParams }: { params: { id: string; userId: string }; searchParams: { sprint?: string } }) {
-  const cur = getSession();
+export default async function DevPage(props: { params: Promise<{ id: string; userId: string }>; searchParams: Promise<{ sprint?: string }> }) {
+  const params = await props.params;             // Next 15+: params e searchParams são assíncronos
+  const searchParams = await props.searchParams;
+  const cur = await getSession();
   if (!cur) redirect("/");
   const pid = Number(params.id), uid = Number(params.userId);
   if (!Number.isInteger(pid) || !Number.isInteger(uid)) notFound();

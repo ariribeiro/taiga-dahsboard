@@ -6,8 +6,8 @@
 
 **O que o Taiga não mostra: o andamento de cada pessoa do time, sprint a sprint — e o fluxo dos projetos Kanban.**
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=000)](https://react.dev)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=000)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=fff)](https://www.typescriptlang.org)
 [![Taiga](https://img.shields.io/badge/Taiga-API%20REST-5b5bf0?style=flat-square)](https://docs.taiga.io/api.html)
 ![Somente leitura](https://img.shields.io/badge/Taiga-somente%20leitura-12a37a?style=flat-square)
@@ -98,7 +98,7 @@ Projetos sem o módulo Scrum (ou sem nenhuma sprint) ganham uma visão de **flux
 
 ### Requisitos
 
-- **Node.js 18.17 ou superior** (testado com 22).
+- **Node.js 20.9 ou superior** (testado com 22).
 - Uma instância do **Taiga** com a API acessível (`https://…/api/v1`) e uma conta de usuário.
 
 ### Instalação
@@ -275,7 +275,6 @@ npm start
 - **Sprints fechadas usam o estado atual:** o Taiga não guarda uma "foto" do fechamento, então uma story concluída depois do fim da sprint aparece como entregue nela.
 - **Burndown só no nível da sprint** (não por pessoa).
 - **No Kanban, "parado" usa a última modificação**, e um comentário de outra pessoa reinicia a contagem. O tempo real em cada coluna exigiria o histórico de cada item.
-- **Next.js 14 sem correções futuras:** o `npm audit` ainda aponta vulnerabilidades que só têm correção no Next 16 (mitigadas: otimizador de imagens desligado e servidor de desenvolvimento só local). A migração é a próxima prioridade.
 - **Não há testes automatizados** ainda; a validação foi feita com o Taiga simulado e na prática.
 
 ## 🔭 Roadmap

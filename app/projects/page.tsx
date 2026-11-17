@@ -7,7 +7,7 @@ import { ProjectList } from "../project-list";
 export const dynamic = "force-dynamic";
 
 export default async function Projects() {
-  const cur = getSession();
+  const cur = await getSession();
   if (!cur) redirect("/");
   let projects;
   try {

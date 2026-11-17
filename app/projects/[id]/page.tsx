@@ -16,8 +16,10 @@ import { Avatar, Bar, Kpi, Picture, Ring, SprintPicker, fmtDate as fmt } from ".
 
 export const dynamic = "force-dynamic";
 
-export default async function ProjectPage({ params, searchParams }: { params: { id: string }; searchParams: { sprint?: string; days?: string } }) {
-  const cur = getSession();
+export default async function ProjectPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ sprint?: string; days?: string }> }) {
+  const params = await props.params;             // Next 15+: params e searchParams são assíncronos
+  const searchParams = await props.searchParams;
+  const cur = await getSession();
   if (!cur) redirect("/");
   const pid = Number(params.id);
   if (!Number.isInteger(pid)) notFound();

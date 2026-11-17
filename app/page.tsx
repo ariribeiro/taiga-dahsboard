@@ -11,8 +11,9 @@ const MSG: Record<string, string> = {
   CERT: "Erro de certificado HTTPS do Taiga. Veja a nota sobre NODE_EXTRA_CA_CERTS no README.",
 };
 
-export default function Home({ searchParams }: { searchParams: { erro?: string; m?: string } }) {
-  if (getSession()) redirect("/projects");
+export default async function Home(props: { searchParams: Promise<{ erro?: string; m?: string }> }) {
+  const searchParams = await props.searchParams; // Next 15+: searchParams é assíncrono
+  if (await getSession()) redirect("/projects");
   return (
     <main className="login-page">
       <section className="hero">
