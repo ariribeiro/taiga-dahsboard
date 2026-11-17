@@ -7,7 +7,9 @@ export async function POST(req: Request) {
   const form = await req.formData();
   const username = String(form.get("username") ?? "").trim();
   const password = String(form.get("password") ?? "");
-  const back = (q: string) => NextResponse.redirect(new URL(q, req.url), 303);
+  // Redirecionamento RELATIVO: o navegador resolve na origem em que já está (localhost, 127.0.0.1, IP, proxy HTTPS).
+  // Montar a URL a partir de req.url usava o endereço do servidor e quebrava o login (e o CSP form-action) em outros hosts.
+  const back = (q: string) => new NextResponse(null, { status: 303, headers: { Location: q } });
   if (!username || !password) return back("/?erro=1");
 
   // Freio de força bruta: bloqueia ANTES de consultar o Taiga (por usuário e por IP).
