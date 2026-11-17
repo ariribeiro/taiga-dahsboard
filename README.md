@@ -98,7 +98,7 @@ Projetos sem o módulo Scrum (ou sem nenhuma sprint) ganham uma visão de **flux
 
 ### Requisitos
 
-- **Node.js 20.9 ou superior** (testado com 22).
+- **Node.js 22.12 ou superior** (testado com 22; o Node 20 já saiu de suporte).
 - Uma instância do **Taiga** com a API acessível (`https://…/api/v1`) e uma conta de usuário.
 
 ### Instalação
@@ -258,6 +258,26 @@ scripts/mock-taiga.mjs          Taiga simulado para demonstração
 docs/                           logotipo e capturas de tela
 ```
 
+## 🧪 Testes
+
+O projeto tem **testes automatizados** em duas camadas, que rodam a cada PR no GitHub Actions (`.github/workflows/ci.yml`):
+
+| Camada | Comando | O que cobre |
+|---|---|---|
+| Tipos | `npm run typecheck` | TypeScript em todo o projeto, inclusive os testes. |
+| Unitários (Vitest) | `npm run test:unit` | Regras de cálculo (ritmo, progresso, impedimento, papéis, Kanban), limite de login, semáforo, links e o cliente do Taiga (retentativa, timeout, concorrência, renovação de token). Rodam em 2 segundos. |
+| Ponta a ponta (Playwright) | `npm run e2e` | Navegador real contra o app em modo produção e o Taiga simulado: login e logout (por `localhost` e `127.0.0.1`), limite de tentativas, expiração de sessão, cabeçalhos de segurança, **zero violações de CSP**, favoritos, sprint, modais, Markdown, galeria, Kanban e falhas do Taiga. |
+
+```bash
+npm run test:unit      # rápido, sem navegador
+npm run e2e            # compila o app e roda os testes de navegador
+npm test               # tudo: tipos + unitários + ponta a ponta
+```
+
+- Na primeira execução local dos testes de navegador, instale o Chromium: `npx playwright install chromium`.
+- Os testes de ponta a ponta sobem sozinhos o Taiga simulado (portas 9000 e 9001) e três instâncias do app (portas 3100 a 3102, com configurações diferentes para testar sessão curta, timeout e concorrência). Se as portas estiverem em uso, encerre os processos antigos antes.
+- O simulador aceita trocar o comportamento em tempo de execução (`POST /__mode`), por exemplo para travar um endpoint ou devolver 503 uma vez, o que permite testar as falhas sem mexer no código.
+
 ## 🏭 Produção
 
 ```bash
@@ -275,14 +295,13 @@ npm start
 - **Sprints fechadas usam o estado atual:** o Taiga não guarda uma "foto" do fechamento, então uma story concluída depois do fim da sprint aparece como entregue nela.
 - **Burndown só no nível da sprint** (não por pessoa).
 - **No Kanban, "parado" usa a última modificação**, e um comentário de outra pessoa reinicia a contagem. O tempo real em cada coluna exigiria o histórico de cada item.
-- **Não há testes automatizados** ainda; a validação foi feita com o Taiga simulado e na prática.
 
 ## 🔭 Roadmap
 
 - [ ] **Perfil do dev ao longo das sprints** — tendência de entrega, estimada em ~2 requisições por sprint.
 - [ ] **Fluxo acumulado (CFD) e tempo por coluna** no Kanban (exige guardar dados no servidor).
 - [ ] Sessões em **Redis** para múltiplas instâncias.
-- [ ] Testes automatizados para as regras de cálculo.
+- [x] Testes automatizados (unitários e de ponta a ponta) com CI no GitHub Actions.
 
 A lista completa de melhorias de arquitetura e segurança, com prioridades e esforço, está em [`docs/MELHORIAS-PENDENTES.md`](docs/MELHORIAS-PENDENTES.md).
 
