@@ -1,9 +1,6 @@
 import Link from "next/link";
-import type { TProject } from "@/lib/taiga";
-import { loadKanban } from "@/lib/kanban";
-import { kanbanMetrics, type KDev, type KItem } from "@/lib/kanban-metrics";
-import { BLOCKED_STATUS_PATTERN } from "@/lib/metrics";
-import { allowedRoleNames } from "@/lib/roles";
+import { apiGet } from "@/lib/api";
+import type { KanbanResponse, KDev, KItem } from "@/lib/api-types";
 import { taigaWebLink } from "@/lib/links";
 import { Header } from "./header";
 import { Avatar, Chip, ExtLink, Kpi, Picture } from "./ui";
@@ -12,20 +9,18 @@ import { PeriodPicker } from "./period-picker";
 import { ThroughputChart } from "./kanban-chart";
 import { KanbanHelp } from "./criteria-help";
 
-const STALE_DAYS = Math.max(1, Number(process.env.KANBAN_STALE_DAYS) || 7);
-
-function Row({ it, pid, slug }: { it: KItem; pid: number; slug: string }) {
+function Row({ it, pid, slug, web }: { it: KItem; pid: number; slug: string; web: string }) {
   return (
     <li className={it.blocked ? "krow-blocked" : ""}>
       <span className="ref">#{it.ref}</span>
-      <span className="subj"><ItemButton kind="us" id={it.id} project={pid} href={taigaWebLink(slug, "us", it.ref)}>{it.subject}</ItemButton> <ExtLink href={taigaWebLink(slug, "us", it.ref)} what={`story #${it.ref}`} /></span>
+      <span className="subj"><ItemButton kind="us" id={it.id} project={pid} href={taigaWebLink(web, slug, "us", it.ref)}>{it.subject}</ItemButton> <ExtLink href={taigaWebLink(web, slug, "us", it.ref)} what={`story #${it.ref}`} /></span>
       <Chip name={it.status} color={it.color} />
       <span className={`meta${it.stale ? " err" : ""}`}>{it.days} d sem alteração</span>
     </li>
   );
 }
 
-function DevCard({ d, pid, slug, days, points }: { d: KDev; pid: number; slug: string; days: number; points: boolean }) {
+function DevCard({ d, pid, slug, web, days, points }: { d: KDev; pid: number; slug: string; web: string; days: number; points: boolean }) {
   const idle = !d.wip && !d.done;
   return (
     <details className={`card kdev${d.blocked ? " blocked" : ""}${idle ? " idle" : ""}`}>
@@ -43,17 +38,17 @@ function DevCard({ d, pid, slug, days, points }: { d: KDev; pid: number; slug: s
           </div>
         )}
       </summary>
-      {d.items.length > 0 && <ul className="items kitems">{d.items.map((it) => <Row key={it.id} it={it} pid={pid} slug={slug} />)}</ul>}
+      {d.items.length > 0 && <ul className="items kitems">{d.items.map((it) => <Row key={it.id} it={it} pid={pid} slug={slug} web={web} />)}</ul>}
     </details>
   );
 }
 
 /** Visão de fluxo para projetos Kanban (sem sprints). */
-export async function KanbanPage({ project, pid, userId, userName, days }: { project: TProject; pid: number; userId: number; userName: string; days: number }) {
-  const data = await loadKanban(pid, userId);
-  const m = kanbanMetrics({ statuses: data.statuses, open: data.open, done: data.done, doneTotal: data.doneTotal, ordered: data.ordered, partial: data.partial, members: data.members, days, staleDays: STALE_DAYS });
+export async function KanbanPage({ pid, userName, days }: { pid: number; userName: string; days: number }) {
+  const data = await apiGet<KanbanResponse>(`/projects/${pid}/kanban?days=${days}`);
+  const { project, metrics: m, meta, board } = data;
+  const STALE_DAYS = meta.staleDays;
   const slug = project.slug;
-  const board = data.statuses;
   const delta = m.doneInWindow != null && m.prevDone != null ? m.doneInWindow - m.prevDone : null;
   const avg = m.throughput.length ? Math.round((m.throughput.reduce((n, w) => n + w.count, 0) / m.throughput.length) * 10) / 10 : 0;
 
@@ -63,7 +58,7 @@ export async function KanbanPage({ project, pid, userId, userName, days }: { pro
       <main className="wrap">
         <Link href="/projects" className="back">← Projetos</Link>
         <div className="page-title">
-          <div className="dev-head"><Picture name={project.name} src={project.logo_small_url} size={44} square /><h2>{project.name}</h2><span className="badge b-closed">Kanban</span><KanbanHelp info={{ days, staleDays: STALE_DAYS, blockedPattern: BLOCKED_STATUS_PATTERN, roles: allowedRoleNames(), doneTotal: data.doneTotal, fetched: data.done.length, ordered: data.ordered, partial: data.partial }} /></div>
+          <div className="dev-head"><Picture name={project.name} src={project.logo_small_url} size={44} square /><h2>{project.name}</h2><span className="badge b-closed">Kanban</span><KanbanHelp info={{ days, staleDays: STALE_DAYS, blockedPattern: meta.blockedPattern, roles: meta.roles, doneTotal: data.doneTotal, fetched: data.fetched, ordered: data.ordered, partial: data.partial }} /></div>
           <PeriodPicker current={days} />
         </div>
 
@@ -85,7 +80,7 @@ export async function KanbanPage({ project, pid, userId, userName, days }: { pro
 
         {m.windowIncomplete && (
           <p className="alert">
-            Há <b>{data.doneTotal}</b> itens concluídos no total, e só os {data.done.length} {data.ordered ? "mais recentes" : "primeiros devolvidos pelo Taiga"} foram analisados.
+            Há <b>{data.doneTotal}</b> itens concluídos no total, e só os {data.fetched} {data.ordered ? "mais recentes" : "primeiros devolvidos pelo Taiga"} foram analisados.
             {data.ordered ? " Eles não cobrem todo o período escolhido" : " Como o Taiga não ordenou a lista, não dá para garantir que cobrem o período"}, então os números de conclusão (vazão e tempo de entrega) podem estar incompletos. Tente um período menor.
           </p>
         )}
@@ -107,17 +102,17 @@ export async function KanbanPage({ project, pid, userId, userName, days }: { pro
         <div className="k2">
           <section className="card">
             <h4 className="sec">Sem movimento há mais tempo <span className="count">{m.aging.length}</span></h4>
-            {m.aging.length ? <ul className="items kitems">{m.aging.map((it) => <Row key={it.id} it={it} pid={pid} slug={slug} />)}</ul> : <p className="muted">Nada em andamento.</p>}
+            {m.aging.length ? <ul className="items kitems">{m.aging.map((it) => <Row key={it.id} it={it} pid={pid} slug={slug} web={meta.webBase} />)}</ul> : <p className="muted">Nada em andamento.</p>}
           </section>
           <section className="card">
             <h4 className="sec">Impedimentos <span className="count">{m.blockedItems.length}</span></h4>
-            {m.blockedItems.length ? <ul className="items kitems">{m.blockedItems.map((it) => <Row key={it.id} it={it} pid={pid} slug={slug} />)}</ul> : <p className="muted">Nenhum item impedido. 🎉</p>}
+            {m.blockedItems.length ? <ul className="items kitems">{m.blockedItems.map((it) => <Row key={it.id} it={it} pid={pid} slug={slug} web={meta.webBase} />)}</ul> : <p className="muted">Nenhum item impedido. 🎉</p>}
           </section>
         </div>
 
         <div className="page-title"><h3>Por desenvolvedor</h3><span className="muted">Clique em um card para ver os itens em andamento</span></div>
         {!m.devs.length && <p className="muted">Nenhum membro com os papéis configurados.</p>}
-        <div className="dev-grid">{m.devs.map((d) => <DevCard key={d.userId} d={d} pid={pid} slug={slug} days={days} points={m.hasPoints} />)}</div>
+        <div className="dev-grid">{m.devs.map((d) => <DevCard key={d.userId} d={d} pid={pid} slug={slug} web={meta.webBase} days={days} points={m.hasPoints} />)}</div>
       </main>
     </>
   );

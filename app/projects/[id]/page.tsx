@@ -1,14 +1,11 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { getSession } from "@/lib/session";
-import { TaigaError, hasProjectAccess } from "@/lib/taiga";
+import { ApiError, apiGet, getMe } from "@/lib/api";
+import type { SprintResponse } from "@/lib/api-types";
 import { Forbidden } from "../../forbidden";
-import { loadSprint } from "@/lib/sprint";
-import { paceOf, PACE_TOLERANCE, BLOCKED_STATUS_PATTERN } from "@/lib/metrics";
 import { CriteriaHelp } from "../../criteria-help";
 import { KanbanPage } from "../../kanban-page";
 import { parsePeriod } from "@/lib/periods";
-import { allowedRoleNames } from "@/lib/roles";
 import { Header } from "../../header";
 import { Burndown } from "../../burndown";
 import { UnassignedKpi } from "../../unassigned";
@@ -20,30 +17,30 @@ export const dynamic = "force-dynamic";
 export default async function ProjectPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ sprint?: string; days?: string }> }) {
   const params = await props.params;             // Next 15+: params e searchParams são assíncronos
   const searchParams = await props.searchParams;
-  const cur = await getSession();
-  if (!cur) redirect("/");
+  const me = await getMe();
+  if (!me) redirect("/");
   const pid = Number(params.id);
   if (!Number.isInteger(pid)) notFound();
 
   try {
-    if (!(await hasProjectAccess(cur.session.userId, pid))) return <Forbidden name={cur.session.fullName} />;
-    const data = await loadSprint(pid, searchParams.sprint, true);
+    const qs = new URLSearchParams({ stats: "1", ...(searchParams.sprint ? { sprint: searchParams.sprint } : {}) });
+    const data = await apiGet<SprintResponse>(`/projects/${pid}/sprint?${qs}`);   // a API confere o papel da pessoa no projeto (403)
     if (data.kind === "kanban") {
-      return <KanbanPage project={data.project} pid={pid} userId={cur.session.userId} userName={cur.session.fullName} days={parsePeriod(searchParams.days)} />;
+      return <KanbanPage pid={pid} userName={me.fullName} days={parsePeriod(searchParams.days)} />;
     }
     const { project, sorted, sprint } = data;
     if (!sprint) {
-      return (<><Header name={cur.session.fullName} /><main className="wrap"><h2>{project.name}</h2><p className="muted">Este projeto não tem sprints.</p></main></>);
+      return (<><Header name={me.fullName} /><main className="wrap"><h2>{project.name}</h2><p className="muted">Este projeto não tem sprints.</p></main></>);
     }
-    const { devs, overview: o, stats, unassigned: un } = data;
-    const pace = paceOf(o.progress, o.expectedProgress, sprint.closed);
+    const { devs, overview: o, stats, unassigned: un, pace, meta } = data;
+    const webLink = (kind: "us" | "task", ref: number) => taigaWebLink(meta.webBase, project.slug, kind, ref);
     const PACE_LABEL = { closed: "Fechada", ahead: "Acima do ritmo", late: "Atrasada", ok: "No ritmo" } as const;
 
     const totalStatus = o.byStatus.reduce((n, x) => n + x.count, 0) || 1;
 
     return (
       <>
-        <Header name={cur.session.fullName} />
+        <Header name={me.fullName} />
         <main className="wrap">
           <Link href="/projects" className="back">← Projetos</Link>
           <div className="page-title">
@@ -59,7 +56,7 @@ export default async function ProjectPage(props: { params: Promise<{ id: string 
                 <span className="badge-row">
                   <span className={`badge b-${pace.state}`}>{PACE_LABEL[pace.state]}</span>
                   <CriteriaHelp info={{ sprint: sprint.name, closed: sprint.closed, progress: o.progress, expected: o.expectedProgress, diff: pace.diff, state: pace.state,
-                    tolerance: PACE_TOLERANCE, hasPoints: o.totalPoints > 0, blockedPattern: BLOCKED_STATUS_PATTERN, roles: allowedRoleNames() }} />
+                    tolerance: meta.paceTolerance, hasPoints: o.totalPoints > 0, blockedPattern: meta.blockedPattern, roles: meta.roles }} />
                 </span>
               </div>
               <p className="muted">
@@ -81,8 +78,8 @@ export default async function ProjectPage(props: { params: Promise<{ id: string 
             <Kpi icon="▤" value={<>{o.storiesDone}<small>/{o.stories}</small></>} label="user stories" />
             <Kpi icon="✓" value={<>{o.tasksDone}<small>/{o.tasks}</small></>} label="tasks" />
             <UnassignedKpi project={pid} sprint={sprint.name}
-              stories={un.stories.map((x) => ({ ...x, href: taigaWebLink(project.slug, "us", x.ref) }))}
-              tasks={un.tasks.map((x) => ({ ...x, href: taigaWebLink(project.slug, "task", x.ref) }))} />
+              stories={un.stories.map((x) => ({ ...x, href: webLink("us", x.ref) }))}
+              tasks={un.tasks.map((x) => ({ ...x, href: webLink("task", x.ref) }))} />
           </div>
 
           {stats?.days && <Burndown days={stats.days} />}
@@ -127,9 +124,10 @@ export default async function ProjectPage(props: { params: Promise<{ id: string 
       </>
     );
   } catch (e) {
-    if (e instanceof TaigaError) {
+    if (e instanceof ApiError) {
       if (e.status === 401) redirect("/");
-      if (e.status === 403 || e.status === 404) return (<><Header name={cur.session.fullName} /><main className="wrap"><p className="err">Sem permissão ou projeto não encontrado.</p><Link href="/projects">Voltar</Link></main></>);
+      if (e.status === 403) return <Forbidden name={me.fullName} />;
+      if (e.status === 404) return (<><Header name={me.fullName} /><main className="wrap"><p className="err">Sem permissão ou projeto não encontrado.</p><Link href="/projects">Voltar</Link></main></>);
     }
     throw e;
   }

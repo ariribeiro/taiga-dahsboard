@@ -27,6 +27,8 @@ const securityHeaders = [
 ];
 
 export default {
+  // Gera .next/standalone (servidor mínimo, sem node_modules completo): base da imagem de contêiner.
+  output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
   // Não usamos next/image: desliga o otimizador de imagens (superfície de ataque desnecessária).

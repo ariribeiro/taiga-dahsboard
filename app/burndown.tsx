@@ -1,4 +1,4 @@
-import type { TStatsDay } from "@/lib/taiga";
+import type { TStatsDay } from "@/lib/api-types";
 
 const W = 760, H = 280, L = 44, R = 16, T = 16, B = 34;
 const dm = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });

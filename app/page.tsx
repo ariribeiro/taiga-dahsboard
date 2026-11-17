@@ -1,19 +1,23 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
+import { getMe } from "@/lib/api";
 import { Logo } from "./ui";
 
 const MSG: Record<string, string> = {
   "1": "Informe usuário e senha.",
   CRED: "Usuário ou senha inválidos (o Taiga recusou as credenciais).",
-  CONFIG: "TAIGA_URL não está configurada. Defina no arquivo .env.local e reinicie o servidor.",
-  REDE: "Não consegui conectar ao Taiga. Verifique a TAIGA_URL, a rede/VPN e veja o terminal do servidor.",
+  CONFIG: "O serviço de dados não está configurado (TAIGA_URL e usuário de serviço). Avise o administrador.",
+  REDE: "O serviço de dados não conseguiu conectar ao Taiga. Tente novamente em instantes; se persistir, avise o administrador.",
+  API: "O serviço de dados está indisponível no momento. Tente novamente em instantes.",
+  SERVICE_AUTH: "O serviço de dados não conseguiu se autenticar no Taiga (usuário de serviço). Avise o administrador.",
   LIMITE: "Muitas tentativas de login. Aguarde alguns minutos e tente de novo.",
-  CERT: "Erro de certificado HTTPS do Taiga. Veja a nota sobre NODE_EXTRA_CA_CERTS no README.",
+  CERT: "Erro de certificado HTTPS do Taiga. O administrador precisa configurar a CA (NODE_EXTRA_CA_CERTS no back).",
 };
 
 export default async function Home(props: { searchParams: Promise<{ erro?: string; m?: string }> }) {
   const searchParams = await props.searchParams; // Next 15+: searchParams é assíncrono
-  if (await getSession()) redirect("/projects");
+  // Se a API estiver fora do ar, mostra o login com o aviso em vez de uma página de erro
+  const me = await getMe().catch(() => null);
+  if (me) redirect("/projects");
   return (
     <main className="login-page">
       <section className="hero">

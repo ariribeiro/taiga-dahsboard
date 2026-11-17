@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { getSession } from "@/lib/session";
-import { TaigaError, hasProjectAccess } from "@/lib/taiga";
+import { ApiError, apiGet, getMe } from "@/lib/api";
+import type { SprintResponse } from "@/lib/api-types";
 import { Forbidden } from "../../../../forbidden";
-import { loadSprint } from "@/lib/sprint";
 import { taigaWebLink } from "@/lib/links";
 import { ItemButton } from "../../../../item-modal";
 import { Header } from "../../../../header";
@@ -48,19 +47,19 @@ function Group({ title, items, kind, project, webLink }: { title: string; items:
 export default async function DevPage(props: { params: Promise<{ id: string; userId: string }>; searchParams: Promise<{ sprint?: string }> }) {
   const params = await props.params;             // Next 15+: params e searchParams são assíncronos
   const searchParams = await props.searchParams;
-  const cur = await getSession();
-  if (!cur) redirect("/");
+  const me = await getMe();
+  if (!me) redirect("/");
   const pid = Number(params.id), uid = Number(params.userId);
   if (!Number.isInteger(pid) || !Number.isInteger(uid)) notFound();
 
-  const shell = (children: React.ReactNode) => (<><Header name={cur.session.fullName} /><main className="wrap">{children}</main></>);
+  const shell = (children: React.ReactNode) => (<><Header name={me.fullName} /><main className="wrap">{children}</main></>);
 
   try {
-    if (!(await hasProjectAccess(cur.session.userId, pid))) return <Forbidden name={cur.session.fullName} />;
-    const data = await loadSprint(pid, searchParams.sprint);
+    const data = await apiGet<SprintResponse>(`/projects/${pid}/sprint${searchParams.sprint ? `?${new URLSearchParams({ sprint: searchParams.sprint })}` : ""}`);   // a API confere o papel da pessoa no projeto (403)
     if (data.kind === "kanban") return shell(<><Link href={`/projects/${pid}`} className="back">← {data.project.name}</Link><p className="muted">Este projeto usa Kanban (sem sprints). Veja os itens de cada pessoa no quadro do projeto.</p></>);
     const { project, sorted, sprint } = data;
     if (!sprint) return shell(<p className="muted">Este projeto não tem sprints.</p>);
+    const { meta } = data;
     const dev = data.devs.find((d) => d.userId === uid);
     const back = `/projects/${pid}?sprint=${sprint.id}`;
     if (!dev) return shell(<><Link href={back} className="back">← {project.name}</Link><p className="err">Pessoa não encontrada neste projeto.</p></>);
@@ -69,7 +68,7 @@ export default async function DevPage(props: { params: Promise<{ id: string; use
     const storiesVia = dev.stories.filter((s) => s.role === "via task");
     const toItem = (x: { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; blocked: string | null }, extra: string): Item => ({ id: x.id, ref: x.ref, subject: x.subject, status: x.status, color: x.color, closed: x.closed, blocked: x.blocked, extra });
     // Link para abrir no Taiga (precisa de TAIGA_WEB_URL = endereço do site do Taiga)
-    const webLink = (kind: "us" | "task", ref: number) => taigaWebLink(project.slug, kind, ref);
+    const webLink = (kind: "us" | "task", ref: number) => taigaWebLink(meta.webBase, project.slug, kind, ref);
     const idle = !dev.stories.length && !dev.tasks.length;
 
     return shell(<>
@@ -109,9 +108,10 @@ export default async function DevPage(props: { params: Promise<{ id: string; use
       </>)}
     </>);
   } catch (e) {
-    if (e instanceof TaigaError) {
+    if (e instanceof ApiError) {
       if (e.status === 401) redirect("/");
-      if (e.status === 403 || e.status === 404) return shell(<><p className="err">Sem permissão ou item não encontrado.</p><Link href="/projects">Voltar</Link></>);
+      if (e.status === 403) return <Forbidden name={me.fullName} />;
+      if (e.status === 404) return shell(<><p className="err">Sem permissão ou item não encontrado.</p><Link href="/projects">Voltar</Link></>);
     }
     throw e;
   }

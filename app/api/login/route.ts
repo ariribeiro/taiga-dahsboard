@@ -1,38 +1,46 @@
 import { NextResponse } from "next/server";
-import { taigaLogin, TaigaError } from "@/lib/taiga";
-import { createSession } from "@/lib/session";
-import { clientIp, loginLimiters } from "@/lib/ratelimit";
+import { ApiError, apiFetch, COOKIE, sessionId } from "@/lib/api";
+import { clientIp } from "@/lib/client-ip";
+import { cookies } from "next/headers";
+
+// Erros da API que a tela de login sabe explicar (o resto vira "REDE").
+const KNOWN = new Set(["CONFIG", "REDE", "CERT", "SERVICE_AUTH"]);
 
 export async function POST(req: Request) {
   const form = await req.formData();
   const username = String(form.get("username") ?? "").trim();
   const password = String(form.get("password") ?? "");
   // Redirecionamento RELATIVO: o navegador resolve na origem em que já está (localhost, 127.0.0.1, IP, proxy HTTPS).
-  // Montar a URL a partir de req.url usava o endereço do servidor e quebrava o login (e o CSP form-action) em outros hosts.
   const back = (q: string) => new NextResponse(null, { status: 303, headers: { Location: q } });
   if (!username || !password) return back("/?erro=1");
 
-  // Freio de força bruta: bloqueia ANTES de consultar o Taiga (por usuário e por IP).
-  const userKey = username.toLowerCase();
-  const ip = clientIp(req);
-  const wait = Math.max(loginLimiters.user.retryAfter(userKey), loginLimiters.ip.retryAfter(ip));
-  if (wait > 0) {
-    console.warn(`[login] bloqueado por excesso de tentativas (ip=${ip}, libera em ${Math.ceil(wait / 1000)}s)`);
-    return back(`/?erro=LIMITE&m=${Math.max(1, Math.ceil(wait / 60_000))}`);
+  let res: Response;
+  try {
+    res = await apiFetch("/auth/login", {
+      method: "POST",
+      body: { username, password },
+      sid: await sessionId(),                                   // um novo login encerra a sessão anterior deste navegador
+      headers: { "x-forwarded-for": clientIp(req.headers) },    // IP real, para o freio de força bruta da API
+    });
+  } catch (e) {
+    if (e instanceof ApiError) return back("/?erro=API");
+    throw e;
   }
 
-  try {
-    const u = await taigaLogin(username, password);
-    loginLimiters.user.reset(userKey);
-    await createSession({
-      authToken: u.auth_token, refresh: u.refresh, userId: u.id,
-      fullName: u.full_name_display ?? u.full_name ?? u.username,
-      username: u.username, photo: u.photo ?? null,
+  const body = (await res.json().catch(() => ({}))) as { sid?: string; maxAge?: number; error?: string; retryAfterMinutes?: number };
+  if (res.ok && body.sid) {
+    (await cookies()).set(COOKIE, body.sid, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: body.maxAge ?? 12 * 3600,
     });
     return back("/projects");
-  } catch (e) {
-    // só credenciais recusadas contam como tentativa; falha de rede não penaliza ninguém
-    if (e instanceof TaigaError && e.message === "CRED") { loginLimiters.user.fail(userKey); loginLimiters.ip.fail(ip); }
-    return back(`/?erro=${e instanceof TaigaError ? e.message : "REDE"}`);
   }
+  if (res.status === 429) return back(`/?erro=LIMITE&m=${Math.max(1, Math.trunc(Number(body.retryAfterMinutes)) || 1)}`);
+  if (res.status === 401 && body.error === "CRED") return back("/?erro=CRED");
+  if (res.status === 400) return back("/?erro=1");
+  if (res.status === 401) return back("/?erro=API");        // chave interna errada (API_KEY): problema de configuração
+  return back(`/?erro=${body.error && KNOWN.has(body.error) ? body.error : "REDE"}`);
 }
