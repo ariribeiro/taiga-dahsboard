@@ -1,16 +1,10 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Picture } from "./picture";
+import { useFavorites } from "./use-favorites";
 
 type P = { id: number; name: string; description: string; logo: string | null };
-
-// Favoritos ficam só neste navegador (localStorage), separados por usuário do Taiga.
-const keyFor = (userId: number) => `tdv:favorites:${userId}`;
-const read = (userId: number): number[] => {
-  try { const v = JSON.parse(localStorage.getItem(keyFor(userId)) ?? "[]"); return Array.isArray(v) ? v.filter((x) => Number.isInteger(x)) : []; }
-  catch { return []; }
-};
 
 function Card({ p, fav, onToggle, pid }: { p: P; fav: boolean; onToggle: () => void; pid: number }) {
   return (
@@ -31,23 +25,7 @@ function Card({ p, fav, onToggle, pid }: { p: P; fav: boolean; onToggle: () => v
 
 /** Lista de projetos com estrela de favorito; favoritos primeiro. */
 export function ProjectList({ projects, userId }: { projects: P[]; userId: number }) {
-  const [favs, setFavs] = useState<number[]>([]);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    setFavs(read(userId)); setReady(true);
-    const sync = (e: StorageEvent) => { if (e.key === keyFor(userId)) setFavs(read(userId)); }; // outras abas
-    window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
-  }, [userId]);
-
-  const toggle = useCallback((id: number) => {
-    setFavs((cur) => {
-      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
-      try { localStorage.setItem(keyFor(userId), JSON.stringify(next)); } catch { /* armazenamento indisponível: vale só nesta sessão */ }
-      return next;
-    });
-  }, [userId]);
+  const { favs, ready, toggle } = useFavorites(userId);
 
   const { top, rest } = useMemo(() => ({
     top: projects.filter((p) => favs.includes(p.id)),

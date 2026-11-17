@@ -13,7 +13,7 @@ export async function Header({ name }: { name: string }) {
     <header className="top">
       <div className="top-l">
         <Link href="/projects" className="brand"><Logo /><strong>Visão por Dev</strong></Link>
-        {projects.length > 0 && <ProjectSwitcher projects={projects.map((p) => ({ id: p.id, name: p.name, logo: p.logo_small_url ?? null }))} />}
+        {projects.length > 0 && <ProjectSwitcher userId={cur!.session.userId} projects={projects.map((p) => ({ id: p.id, name: p.name, logo: p.logo_small_url ?? null }))} />}
       </div>
       <form method="post" action="/api/logout" className="user">
         <Avatar name={name} src={photo} size={30} />

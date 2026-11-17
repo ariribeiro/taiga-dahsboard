@@ -2,15 +2,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Picture } from "./picture";
+import { useFavorites } from "./use-favorites";
 
 type P = { id: number; name: string; logo: string | null };
 
 /** Dropdown no topo para trocar de projeto (com busca quando há muitos). */
-export function ProjectSwitcher({ projects }: { projects: P[] }) {
+export function ProjectSwitcher({ projects, userId }: { projects: P[]; userId: number }) {
   const router = useRouter();
   const path = usePathname();
   const currentId = Number(/^\/projects\/(\d+)/.exec(path)?.[1]) || null;
   const current = projects.find((p) => p.id === currentId) ?? null;
+  const { favs, toggle } = useFavorites(userId);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const box = useRef<HTMLDivElement>(null);
@@ -31,8 +33,10 @@ export function ProjectSwitcher({ projects }: { projects: P[] }) {
 
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
-    return t ? projects.filter((p) => p.name.toLowerCase().includes(t)) : projects;
-  }, [projects, q]);
+    const f = t ? projects.filter((p) => p.name.toLowerCase().includes(t)) : projects;
+    // favoritos primeiro (mesma regra da lista da página inicial); ordem original mantida em cada grupo
+    return [...f.filter((p) => favs.includes(p.id)), ...f.filter((p) => !favs.includes(p.id))];
+  }, [projects, q, favs]);
 
   const go = (p: P) => { setOpen(false); if (p.id !== currentId) router.push(`/projects/${p.id}`); };
 
@@ -47,13 +51,22 @@ export function ProjectSwitcher({ projects }: { projects: P[] }) {
         <div className="psw-menu" role="listbox" aria-label="Projetos">
           {searchable && <input ref={search} className="psw-search" placeholder="Buscar projeto…" value={q} onChange={(e) => setQ(e.target.value)} />}
           <div className="psw-list">
-            {list.map((p) => (
-              <button key={p.id} type="button" role="option" aria-selected={p.id === currentId} className={`psw-item${p.id === currentId ? " on" : ""}`} title={p.name} onClick={() => go(p)}>
-                <Picture name={p.name} src={p.logo} size={24} square />
-                <span className="psw-label">{p.name}</span>
-                {p.id === currentId && <span className="psw-check" aria-hidden="true">✓</span>}
-              </button>
-            ))}
+            {list.map((p) => {
+              const fav = favs.includes(p.id);
+              return (
+                <div key={p.id} className="psw-row">
+                  <button type="button" role="option" aria-selected={p.id === currentId} className={`psw-item${p.id === currentId ? " on" : ""}`} title={p.name} onClick={() => go(p)}>
+                    <Picture name={p.name} src={p.logo} size={24} square />
+                    <span className="psw-label">{p.name}</span>
+                    {p.id === currentId && <span className="psw-check" aria-hidden="true">✓</span>}
+                  </button>
+                  <button type="button" className={`star psw-star${fav ? " on" : ""}`} onClick={() => toggle(p.id)} aria-pressed={fav}
+                    aria-label={fav ? `Remover ${p.name} dos favoritos` : `Marcar ${p.name} como favorito`} title={fav ? "Remover dos favoritos" : "Marcar como favorito"}>
+                    {fav ? "★" : "☆"}
+                  </button>
+                </div>
+              );
+            })}
             {!list.length && <p className="muted psw-empty">Nenhum projeto encontrado.</p>}
           </div>
         </div>
