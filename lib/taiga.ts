@@ -142,17 +142,30 @@ export type TTask = {
   is_blocked?: boolean; blocked_note?: string;
 };
 
-// Só entram projetos em que o usuário tem este papel (nome exato no Taiga).
+// Só quem tem este papel NO PROJETO (nome exato no Taiga) pode ver o projeto.
 export const ALLOWED_ROLE = "Servidor Dirti/Fiscal";
 const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+const isAllowedRole = (role?: string | null) => norm(role ?? "") === norm(ALLOWED_ROLE);
 
 export async function getProjects(userId: number): Promise<TProject[]> {
   const [projects, memberships] = await Promise.all([
     taigaGet<TProject[]>(`/projects?member=${userId}&order_by=memberships__user_order`),
-    taigaGet<{ project: number; role_name: string }[]>(`/memberships?member=${userId}`),
+    taigaGet<{ project: number; user: number | null; role_name: string }[]>(`/memberships?member=${userId}`),
   ]);
-  const ok = new Set(memberships.filter((m) => norm(m.role_name ?? "") === norm(ALLOWED_ROLE)).map((m) => m.project));
+  // confere também o usuário: não depende de o Taiga aplicar o filtro ?member=
+  const ok = new Set(memberships.filter((m) => m.user === userId && isAllowedRole(m.role_name)).map((m) => m.project));
   return projects.filter((p) => ok.has(p.id));
+}
+
+/** O usuário é Servidor Dirti/Fiscal neste projeto? Usado para bloquear o acesso ao projeto. */
+export async function hasProjectAccess(userId: number, projectId: number): Promise<boolean> {
+  try {
+    const members = await getMembers(projectId);
+    return members.some((m) => m.user === userId && isAllowedRole(m.role_name));
+  } catch (e) {
+    if (e instanceof TaigaError && (e.status === 403 || e.status === 404)) return false;
+    throw e;
+  }
 }
 const projCache = ((globalThis as unknown as { __projCache?: Map<number, { at: number; data: TProject[] }> }).__projCache ??= new Map());
 /** Lista de projetos com cache de 5 min — usada no seletor do cabeçalho, que aparece em toda página. */

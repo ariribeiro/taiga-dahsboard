@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { TaigaError } from "@/lib/taiga";
+import { TaigaError, hasProjectAccess } from "@/lib/taiga";
+import { Forbidden } from "../../forbidden";
 import { loadSprint } from "@/lib/sprint";
 import { paceOf, PACE_TOLERANCE, BLOCKED_STATUS_PATTERN } from "@/lib/metrics";
 import { CriteriaHelp } from "../../criteria-help";
@@ -25,6 +26,7 @@ export default async function ProjectPage(props: { params: Promise<{ id: string 
   if (!Number.isInteger(pid)) notFound();
 
   try {
+    if (!(await hasProjectAccess(cur.session.userId, pid))) return <Forbidden name={cur.session.fullName} />;
     const data = await loadSprint(pid, searchParams.sprint, true);
     if (data.kind === "kanban") {
       return <KanbanPage project={data.project} pid={pid} userId={cur.session.userId} userName={cur.session.fullName} days={parsePeriod(searchParams.days)} />;
