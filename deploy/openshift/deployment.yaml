@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taiga-dev-view-back
+  labels: { app: taiga-dev-view-back }
+spec:
+  # UMA réplica: as sessões e os freios de login ficam em memória (veja docs/MELHORIAS-PENDENTES.md, item B).
+  replicas: 1
+  selector:
+    matchLabels: { app: taiga-dev-view-back }
+  template:
+    metadata:
+      labels: { app: taiga-dev-view-back }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: back
+          image: registry.suaempresa.com/taiga/taiga-dev-view-back:latest   # ajuste (imagem gerada pelo pipeline)
+          ports:
+            - { name: http, containerPort: 8080 }
+          envFrom:
+            - configMapRef: { name: taiga-dev-view-back }
+            - secretRef: { name: taiga-dev-view-back }
+          # Se o Taiga usa certificado de uma CA interna: monte a CA e descomente.
+          # env:
+          #   - { name: NODE_EXTRA_CA_CERTS, value: /etc/ca/ca.crt }
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: "1", memory: 384Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }

@@ -36,7 +36,7 @@ describe("FailureLimiter", () => {
 
 describe("clientIp", () => {
   afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); });
-  const req = (h: Record<string, string>) => new Request("http://x/", { headers: h });
+  const req = (h: Record<string, string>) => h;
 
   it("sem TRUST_PROXY ignora X-Forwarded-For (não dá para forjar o IP)", async () => {
     vi.resetModules();

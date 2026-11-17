@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: taiga-dev-view-back
+  labels: { app: taiga-dev-view-back }
+data:
+  TAIGA_URL: "https://taiga-api.suaempresa.com"   # ajuste
+  TAIGA_WEB_URL: "https://taiga.suaempresa.com"   # ajuste
+  TRUST_PROXY: "1"                                # o front repassa o IP real do cliente
+  LOG_LEVEL: "info"

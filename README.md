@@ -1,314 +1,117 @@
-<div align="center">
+# Visão por Dev — API (back)
 
-<img src="docs/logo.svg" width="88" alt="Logotipo" />
+API do **Visão por Dev**. Ela consulta o Taiga com um **usuário de serviço**, aplica as regras de negócio (papéis, métricas de sprint e de Kanban) e entrega ao front os dados **já calculados**. O front (repositório `taiga-dev-view-front`) só desenha a tela.
 
-# Taiga · Visão por Dev
+```mermaid
+flowchart LR
+  N[Navegador] -->|HTTPS| F[Front · Next.js]
+  F -->|rede interna · x-api-key + sessão| B[Back · esta API]
+  B -->|usuário de serviço| T[(Taiga)]
+```
 
-**O que o Taiga não mostra: o andamento de cada pessoa do time, sprint a sprint — e o fluxo dos projetos Kanban.**
+- A API **não é exposta** fora do cluster (sem `Route`): só o front a alcança.
+- **Pessoas** continuam entrando com usuário e senha do Taiga, mas isso serve **apenas para provar quem são**: o token delas é descartado na hora. Todas as consultas usam o token do usuário de serviço.
+- O que cada pessoa pode ver é decidido **aqui**: só projetos em que ela tem o papel “Servidor Dirti/Fiscal” (veja `isAllowedRole` em `src/lib/taiga.ts`).
 
-[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org)
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=000)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=fff)](https://www.typescriptlang.org)
-[![Taiga](https://img.shields.io/badge/Taiga-API%20REST-5b5bf0?style=flat-square)](https://docs.taiga.io/api.html)
-![Somente leitura](https://img.shields.io/badge/Taiga-somente%20leitura-12a37a?style=flat-square)
+## Usuário de serviço
 
-[Funcionalidades](#-funcionalidades) ·
-[Começando](#-começando) ·
-[Configuração](#-configuração) ·
-[Como funciona](#-como-funciona) ·
-[Critérios](#-critérios-dos-indicadores) ·
-[Roadmap](#-roadmap)
+1. No Taiga, crie um usuário dedicado (ex.: `svc-taiga-dev-view`), com senha forte, que **não** seja de uma pessoa.
+2. Adicione-o como **membro** de cada projeto que o painel deve mostrar, com um papel **somente leitura** (visualizar projeto, sprints, stories, tasks, membros e anexos). Quem não for membro não aparece no painel, mesmo que a pessoa tenha o papel certo.
+3. Informe `TAIGA_SERVICE_USER` e `TAIGA_SERVICE_PASSWORD` (Secret do OpenShift, nunca no repositório).
 
-<br />
+A API entra com esse usuário sob demanda e **renova o token sozinha** (refresh e, se falhar, novo login). Se a senha for recusada, os dados respondem `503 SERVICE_AUTH` e o erro aparece no log; as pessoas continuam conseguindo entrar.
 
-<img src="docs/screenshots/sprint.png" width="860" alt="Página da sprint: progresso, burndown e cards por desenvolvedor" />
+> ⚠️ Como o usuário de serviço enxerga mais do que cada pessoa, **toda rota confere o papel da pessoa no projeto** e o detalhe de item confere que ele pertence ao projeto informado. Qualquer rota nova que receba um id de projeto deve passar por `guard()` em `src/app.ts`.
 
-</div>
-
-<br />
-
-## ✨ Por que existe
-
-O Taiga é ótimo para organizar o trabalho, mas responder perguntas como *"quem está com o quê?"*, *"quem está impedido?"* ou *"essa sprint vai fechar no prazo?"* exige abrir quadro por quadro. Este projeto lê a API do Taiga e monta essas visões — **sem alterar nada no Taiga**.
-
-Cada pessoa entra com o **próprio login do Taiga** e só enxerga os projetos de que já participa.
-
-## 🧭 Funcionalidades
-
-### Visão da sprint (projetos Scrum)
-
-- **Ritmo da sprint** — progresso real contra o esperado pelo calendário, com selo *Acima do ritmo*, *No ritmo*, *Atrasada* ou *Fechada* e a diferença em pontos percentuais.
-- **Burndown** do próprio Taiga, recolhível, com o resumo de quantos pontos a sprint está acima ou abaixo do ideal.
-- **Um card por desenvolvedor**: progresso, pontos, tasks, itens em aberto e faixa vermelha 🚧 para quem está envolvido em **histórias com impedimento**.
-- **Sem responsável**: o que ninguém assumiu, com a lista clicável.
-- **Seletor de sprint** e **seletor de projeto** no topo (com busca e logos).
-- Ícone **?** que explica cada critério com os números da sprint atual.
-
-### Detalhe de cada pessoa e de cada item
-
-- Página do dev com as stories e tasks agrupadas por status, e etiqueta de **bloqueada**.
-- **Modal** com descrição em **Markdown renderizado** (tabelas, checklists, código, imagens), tasks da story, comentários e anexos.
-- **Galeria de anexos** com visualizador: setas, teclado, deslize no celular e miniaturas.
-- **Link ↗ para o item no próprio Taiga**, em todas as listas.
-
-<div align="center">
-<img src="docs/screenshots/detalhe-item.png" width="860" alt="Modal com os detalhes de uma user story" />
-</div>
-
-### Projetos Kanban
-
-Projetos sem o módulo Scrum (ou sem nenhuma sprint) ganham uma visão de **fluxo**, em janelas de 14, 28, 56 ou 84 dias:
-
-- **Quadro** por coluna com totais e **limite de WIP** (em vermelho quando excedido).
-- Em andamento, **impedidos**, **parados** há N dias, concluídos no período (vs. período anterior) e **tempo de entrega** (mediana e p85).
-- **Vazão semanal** e cards por pessoa com os itens em andamento.
-- Feito para quadros com **milhares de itens finalizados**: o total vem do cabeçalho `x-pagination-count` e só as páginas mais recentes são analisadas.
-
-<div align="center">
-<img src="docs/screenshots/kanban.png" width="860" alt="Visão Kanban: quadro, vazão semanal e cards por pessoa" />
-</div>
-
-### Conforto de uso
-
-| | |
-|---|---|
-| ⭐ **Favoritos** | Estrela nos projetos; os favoritos sobem para o topo. Fica só no navegador de quem usa. |
-| 🌗 **Claro e escuro** | Acompanha o tema do sistema. |
-| 📱 **Responsivo** | Funciona no celular, sem rolagem horizontal. |
-| 🔐 **Somente leitura** | Só faz `GET` na API (além do login). Não cria, edita nem apaga nada. |
-
-<table>
-<tr>
-<td width="50%"><img src="docs/screenshots/login.png" alt="Tela de login" /></td>
-<td width="50%"><img src="docs/screenshots/projetos.png" alt="Lista de projetos com favoritos" /></td>
-</tr>
-<tr>
-<td align="center"><sub>Login com a conta do Taiga</sub></td>
-<td align="center"><sub>Projetos favoritos no topo</sub></td>
-</tr>
-</table>
-
-<div align="center">
-<img src="docs/screenshots/sprint-escuro.png" width="860" alt="Página da sprint no tema escuro" />
-</div>
-
-> As capturas usam o **modo demonstração** (dados fictícios). Veja [Testar sem um Taiga](#testar-sem-um-taiga).
-
-## 🚀 Começando
-
-### Requisitos
-
-- **Node.js 22.12 ou superior** (testado com 22; o Node 20 já saiu de suporte).
-- Uma instância do **Taiga** com a API acessível (`https://…/api/v1`) e uma conta de usuário.
-
-### Instalação
+## Rodando localmente
 
 ```bash
-git clone https://github.com/ariribeiro/taiga-dahsboard.git
-cd taiga-dahsboard
 npm install
-cp .env.example .env.local     # no Windows (CMD): copy .env.example .env.local
+cp .env.example .env.local      # ajuste TAIGA_URL e o usuário de serviço
+npm run dev                     # http://localhost:8080
 ```
 
-Edite o `.env.local` com o endereço da **API** do seu Taiga (sem `/api/v1` no final):
+Sem um Taiga de verdade, use o simulador (aceita qualquer usuário com a senha `senha`):
 
 ```bash
-TAIGA_URL=https://taiga-api.suaempresa.com
-# opcional, habilita os links "↗ Abrir no Taiga" (endereço do SITE, não da API):
-TAIGA_WEB_URL=https://taiga.suaempresa.com
+npm run mock                    # Taiga simulado em http://localhost:9000
+TAIGA_URL=http://localhost:9000 TAIGA_SERVICE_USER=svc TAIGA_SERVICE_PASSWORD=senha npm run dev
 ```
 
-> Os endereços de exemplo (`suaempresa.com`) são **ignorados**: o login avisa que a `TAIGA_URL` ainda não foi configurada, e os links `↗` ficam ocultos até você informar o endereço real.
-
-```bash
-npm run dev      # http://localhost:3000
-```
-
-Entre com o seu usuário e senha do Taiga.
-
-> 💡 **Não sabe o endereço da API?** Abra `https://SEU-TAIGA/conf.json` no navegador e procure a chave `"api"`. A API e o site do Taiga costumam ficar em subdomínios diferentes.
-
-> 🪟 **Windows / PowerShell:** se o `npm` for bloqueado pela política de execução, use o CMD, `npm.cmd`, ou libere para o seu usuário com `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`.
-
-### Testar sem um Taiga
-
-O repositório inclui um **Taiga simulado** com um projeto Scrum (*Projeto Alfa*) e um Kanban (*Quadro Kanban*, com 300 itens finalizados):
-
-```bash
-npm run mock                 # sobe a API de mentira em http://localhost:9000
-# em outro terminal, com TAIGA_URL=http://localhost:9000 no .env.local:
-npm run dev
-```
-
-Entre com **qualquer usuário** e a senha **`senha`**.
-
-<details>
-<summary>Variáveis extras do simulador</summary>
-
-| Variável | Efeito |
-|---|---|
-| `MOCK_DONE=800` | quantidade de itens finalizados no quadro Kanban |
-| `MOCK_NO_ORDER=1` | faz a API recusar `order_by`, para testar o aviso de amostra parcial |
-| `MOCK_LOG=1` | imprime cada requisição recebida (útil para contar chamadas) |
-
-</details>
-
-## 🔧 Configuração
-
-Tudo em `.env.local` (veja o `.env.example`). **Só `TAIGA_URL` é obrigatória.**
+## Configuração
 
 | Variável | Padrão | Para quê |
 |---|---|---|
-| `TAIGA_URL` | — | Endereço da **API** do Taiga, sem `/api/v1`. |
-| `TAIGA_WEB_URL` | *(vazio)* | Endereço do **site** do Taiga. Habilita os links `↗` para stories e tasks. Sem ela, os links ficam ocultos. |
-| `DEV_ROLES` | Desenvolvedor, Analista de negócio e requisitos, Analista de UX, Analista de teste de qualidade, Arquiteto, Administrador de dados, Estagiário | Papéis do Taiga que ganham card, separados por vírgula. `*` mostra todos. Ignora maiúsculas, acentos e plural. |
-| `BLOCKED_STATUS_REGEX` | `imped\|bloquead\|blocked` | Nomes de **status** que significam impedimento (além do bloqueio nativo do Taiga). |
-| `KANBAN_STALE_DAYS` | `7` | Dias sem alteração para um item do Kanban contar como *parado*. |
-| `LOGIN_MAX_FAILURES` / `LOGIN_WINDOW_MINUTES` | `8` / `15` | Tentativas de login com senha errada por usuário, dentro da janela, antes de bloquear. |
-| `TRUST_PROXY` | `0` | `1` somente atrás de proxy reverso que informe o IP real (`X-Forwarded-For`). |
-| `SESSION_IDLE_MINUTES` / `SESSION_MAX_HOURS` | `120` / `12` | A sessão expira após esse tempo sem uso, e dura no máximo isso desde o login. |
-| `TAIGA_TIMEOUT_MS` / `TAIGA_MAX_CONCURRENCY` | `20000` / `8` | Tempo máximo de cada chamada ao Taiga e quantas podem ocorrer ao mesmo tempo. |
+| `TAIGA_URL` | — (**obrigatória**) | Endereço da API do Taiga, sem `/api/v1`. |
+| `TAIGA_SERVICE_USER` / `TAIGA_SERVICE_PASSWORD` | — (**obrigatórias**) | Usuário de serviço. |
+| `INTERNAL_API_KEY` | *(vazia)* | Se definida, toda rota (exceto `/healthz` e `/readyz`) exige o cabeçalho `x-api-key` igual a ela. **Use em produção.** |
+| `TRUST_PROXY` | *(vazio)* | `1` = confia no `X-Forwarded-For` enviado pelo front (IP real do cliente para o freio de login). Só ligue se a API for inacessível a outros clientes. |
+| `TAIGA_WEB_URL` | *(vazio)* | Site do Taiga, para os links “Abrir no Taiga”. |
+| `PORT` / `LOG_LEVEL` | `8080` / `info` | Porta e nível do log (JSON, uma linha por evento). |
+| `DEV_ROLES`, `BLOCKED_STATUS_REGEX`, `KANBAN_STALE_DAYS` | veja `.env.example` | Regras de exibição e de métricas. |
+| `LOGIN_MAX_FAILURES` / `LOGIN_WINDOW_MINUTES` | `8` / `15` | Freio de força bruta no login. |
+| `SESSION_IDLE_MINUTES` / `SESSION_MAX_HOURS` | `120` / `12` | Expiração da sessão. |
+| `TAIGA_TIMEOUT_MS` / `TAIGA_MAX_CONCURRENCY` | `20000` / `8` | Tempo máximo e paralelismo das chamadas ao Taiga. |
 
-## 🔒 Como funciona
+Para um Taiga com certificado de CA interna, monte a CA e defina `NODE_EXTRA_CA_CERTS`.
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant B as Navegador
-    participant N as Next.js (servidor)
-    participant T as API do Taiga
-    B->>N: usuário e senha
-    N->>T: POST /auth
-    T-->>N: token + refresh
-    N-->>B: cookie de sessão (HttpOnly)
-    B->>N: abre um projeto
-    N->>T: GET … (com o token do usuário)
-    T-->>N: stories, tasks, sprints…
-    N-->>B: página pronta
-```
+## Contrato da API
 
-- **A senha passa só pelo servidor** e não é guardada. Os tokens ficam na **memória do servidor**; o navegador recebe apenas um cookie de sessão `HttpOnly` (`Secure` em produção).
-- **Permissões do Taiga valem sempre**: o app usa o token da própria pessoa, então ninguém vê o que não poderia ver no Taiga.
-- **Somente leitura**: nenhuma requisição altera dados no Taiga.
-- **Freio de força bruta**: o login é bloqueado após poucas senhas erradas (por usuário e por IP), antes de consultar o Taiga.
-- **Sessões com prazo**: expiram por inatividade e por duração máxima; um novo login encerra a anterior; em produção o cookie usa o prefixo `__Host-`.
-- **Cabeçalhos de segurança**: CSP, proteção contra clickjacking, `nosniff`, `Referrer-Policy` e HSTS em produção.
-- **Chamadas ao Taiga protegidas**: timeout, retentativas em falhas temporárias e limite de requisições simultâneas.
-- **Markdown seguro**: descrições e comentários viram elementos React, e HTML embutido é sanitizado (sem scripts nem eventos).
-- **Imagens e anexos** são carregados pelo **navegador** direto do Taiga; o navegador precisa alcançar o endereço da mídia.
-- **O que fica guardado**: sessão (memória do servidor), lista de projetos (5 min), finalizados do Kanban (10 min) e **favoritos no `localStorage`** do navegador, por usuário.
+Detalhes e exemplos de payload em [`docs/API.md`](docs/API.md). Resumo (a sessão vai em `Authorization: Bearer <sid>`):
 
-## 📐 Critérios dos indicadores
-
-O ícone **?** de cada página mostra isto dentro do app, com os números da sprint atual.
-
-| Indicador | Como é calculado |
+| Rota | Descrição |
 |---|---|
-| **Progresso da sprint** | Pontos das stories **concluídas** ÷ pontos totais (sem pontos, conta stories). Uma story só conta quando fecha inteira. |
-| **Esperado pelo calendário** | Fração dos dias já decorridos, de forma linear (fins de semana contam). |
-| **Ritmo** | 🔵 *Acima* se real > esperado + **10 p.p.** · 🔴 *Atrasada* se real + 10 p.p. < esperado · 🟢 *No ritmo* no restante · ⚪ *Fechada*. |
-| **Progresso do dev** | Pontos concluídos ÷ pontos das stories de que é responsável; sem pontos, tasks concluídas ÷ tasks. Pontos de stories compartilhadas são divididos igualmente. |
-| **Impedimento** | Story **aberta** com status que combine com `BLOCKED_STATUS_REGEX` **ou** bloqueada no Taiga. Marca quem é responsável e quem só tem tasks nela. |
-| **Sem responsável** | Stories + tasks da sprint que ninguém assumiu. |
-| **Kanban: em andamento** | Colunas abertas, exceto a primeira (a fila). |
-| **Kanban: parados** | Em andamento sem alteração há `KANBAN_STALE_DAYS`+ dias (pela data da última modificação). |
-| **Kanban: tempo de entrega** | Da criação à conclusão dos itens concluídos no período; mediana e percentil 85. |
+| `GET /healthz`, `GET /readyz` | Sondas (sem chave). `readyz` = 503 se faltar configuração. |
+| `POST /auth/login` | `{username, password}` → `{sid, maxAge, user}`. Erros: 400, 401 `CRED`, 429 `LIMITE`, 502 `REDE`/`CERT`, 503 `CONFIG`. |
+| `POST /auth/logout` | Encerra a sessão (204). |
+| `GET /me` | Quem está logado. |
+| `GET /projects[?cache=1]` | Projetos em que a pessoa tem o papel permitido. |
+| `GET /projects/:id/sprint[?sprint=&stats=1]` | Sprint, devs, ritmo e burndown (ou `kind:"kanban"`). |
+| `GET /projects/:id/kanban[?days=]` | Quadro e métricas de fluxo. |
+| `GET /items?kind=us\|task&id=&project=` | Detalhe de story/task. |
 
-> ⚠️ Pontos são estimativas do time e papéis diferentes não são comparáveis entre si. Use os indicadores para **conversar sobre o fluxo**, não para ranquear pessoas.
+Erros têm sempre o formato `{"error": "CODIGO"}` e **nunca** devolvem detalhes internos. Respostas levam `Cache-Control: no-store`.
 
-## 📡 Consumo da API
-
-O app evita sobrecarregar o Taiga. Contagens aproximadas de requisições:
-
-| Tela | Requisições |
-|---|---|
-| Página da sprint | ~6 (projeto, membros, sprints, stories, tasks, burndown) |
-| Página do dev | ~5 |
-| Abrir o modal de um item | ~5 (item, membros, histórico, tasks da story, anexos) |
-| Kanban, 1ª visita (300 finalizados) | 12 |
-| Kanban, visitas seguintes | 8 (finalizados em cache) |
-
-A lista de projetos do cabeçalho fica em cache por 5 minutos. No Kanban, as colunas concluídas **não são baixadas por inteiro**: o total vem de `x-pagination-count` e são lidas no máximo 5 páginas de 100 itens.
-
-<details>
-<summary>Endpoints do Taiga usados</summary>
-
-`POST /auth` · `POST /auth/refresh` · `GET /projects` · `/projects/{id}` · `/memberships` · `/milestones` · `/milestones/{id}/stats` · `/userstories` · `/userstories/{id}` · `/tasks` · `/tasks/{id}` · `/userstory-statuses` · `/users/{id}` · `/history/{userstory|task}/{id}` · `/{userstories|tasks}/attachments`
-
-Os campos usados seguem a documentação oficial da API. Versões muito diferentes do Taiga podem exigir ajustes.
-
-</details>
-
-## 🗂️ Estrutura
-
-```
-app/
-  page.tsx                      login
-  projects/                     lista de projetos (favoritos)
-  projects/[id]/                sprint (Scrum) ou visão de fluxo (Kanban)
-  projects/[id]/devs/[userId]/  situação de uma pessoa na sprint
-  api/login · api/logout        sessão
-  api/item                      detalhes de story/task para o modal
-  item-modal · lightbox · …     componentes de interface
-lib/
-  taiga.ts                      cliente da API (token, refresh, paginação)
-  session.ts                    sessão em memória
-  sprint.ts · metrics.ts        carga e cálculos da sprint
-  kanban.ts · kanban-metrics.ts carga e cálculos do Kanban
-  roles.ts · links.ts           papéis e links para o Taiga
-scripts/mock-taiga.mjs          Taiga simulado para demonstração
-docs/                           logotipo e capturas de tela
-```
-
-## 🧪 Testes
-
-O projeto tem **testes automatizados** em duas camadas, que rodam a cada PR no GitHub Actions (`.github/workflows/ci.yml`):
-
-| Camada | Comando | O que cobre |
-|---|---|---|
-| Tipos | `npm run typecheck` | TypeScript em todo o projeto, inclusive os testes. |
-| Unitários (Vitest) | `npm run test:unit` | Regras de cálculo (ritmo, progresso, impedimento, papéis, Kanban), limite de login, semáforo, links e o cliente do Taiga (retentativa, timeout, concorrência, renovação de token). Rodam em 2 segundos. |
-| Ponta a ponta (Playwright) | `npm run e2e` | Navegador real contra o app em modo produção e o Taiga simulado: login e logout (por `localhost` e `127.0.0.1`), limite de tentativas, expiração de sessão, cabeçalhos de segurança, **zero violações de CSP**, favoritos, sprint, modais, Markdown, galeria, Kanban e falhas do Taiga. |
+## Testes
 
 ```bash
-npm run test:unit      # rápido, sem navegador
-npm run e2e            # compila o app e roda os testes de navegador
-npm test               # tudo: tipos + unitários + ponta a ponta
+npm test            # tipos + unitários + API (sobe o Taiga simulado e chama a API em memória)
 ```
 
-- Na primeira execução local dos testes de navegador, instale o Chromium: `npx playwright install chromium`.
-- Os testes de ponta a ponta sobem sozinhos o Taiga simulado (portas 9000 e 9001) e três instâncias do app (portas 3100 a 3102, com configurações diferentes para testar sessão curta, timeout e concorrência). Se as portas estiverem em uso, encerre os processos antigos antes.
-- O simulador aceita trocar o comportamento em tempo de execução (`POST /__mode`), por exemplo para travar um endpoint ou devolver 503 uma vez, o que permite testar as falhas sem mexer no código.
+Os testes de `tests/api` cobrem login, sessão, freio de força bruta, chave interna, usuário de serviço (renovação e falhas), controle de acesso por papel, parâmetros inválidos, anexos perigosos e falhas do Taiga (timeout, 503 intermitente, concorrência).
 
-## 🏭 Produção
+## Contêiner e OpenShift
 
 ```bash
-npm run build
-npm start
+docker build -t taiga-dev-view-back .
+docker run --rm -p 8080:8080 --env-file .env.local taiga-dev-view-back
 ```
 
-- Sirva por **HTTPS** (proxy reverso). Em produção o cookie de sessão é `Secure` e não funciona em HTTP puro.
-- As sessões ficam **em memória**: reiniciar o servidor desloga todo mundo, e só há suporte a **uma instância**. Para várias instâncias, troque o armazenamento em `lib/session.ts` por Redis.
-- Atrás de um proxy reverso, defina `TRUST_PROXY=1` para o limite de tentativas usar o IP real de cada pessoa.
-- `npm run dev` escuta só em `127.0.0.1`; não exponha o servidor de desenvolvimento na rede.
+A imagem roda como usuário sem privilégios, com o sistema de arquivos só de leitura, compatível com a SCC `restricted` (UID aleatório, GID 0). Manifests em [`deploy/openshift/`](deploy/openshift): `ConfigMap`, `Secret` (modelo), `Deployment`, `Service` (sem `Route`) e `NetworkPolicy` (só o front acessa).
 
-## ⚠️ Limitações conhecidas
+```bash
+oc apply -f deploy/openshift/configmap.yaml
+oc create secret generic taiga-dev-view-back --from-literal=TAIGA_SERVICE_USER=... --from-literal=TAIGA_SERVICE_PASSWORD=... --from-literal=INTERNAL_API_KEY="$(openssl rand -hex 32)"
+oc apply -f deploy/openshift/deployment.yaml -f deploy/openshift/service.yaml -f deploy/openshift/networkpolicy.yaml
+```
 
-- **Sprints fechadas usam o estado atual:** o Taiga não guarda uma "foto" do fechamento, então uma story concluída depois do fim da sprint aparece como entregue nela.
-- **Burndown só no nível da sprint** (não por pessoa).
-- **No Kanban, "parado" usa a última modificação**, e um comentário de outra pessoa reinicia a contagem. O tempo real em cada coluna exigiria o histórico de cada item.
+> **Uma réplica apenas.** Sessões e contadores de login ficam em memória; reiniciar o pod desloga todos. Para escalar, mover para Redis (item B de [`docs/MELHORIAS-PENDENTES.md`](docs/MELHORIAS-PENDENTES.md)).
 
-## 🔭 Roadmap
+`.gitlab-ci.yml`: tipos, testes, build e `npm audit`; na branch padrão gera a imagem com Kaniko e publica no registro do GitLab.
 
-- [ ] **Perfil do dev ao longo das sprints** — tendência de entrega, estimada em ~2 requisições por sprint.
-- [ ] **Fluxo acumulado (CFD) e tempo por coluna** no Kanban (exige guardar dados no servidor).
-- [ ] Sessões em **Redis** para múltiplas instâncias.
-- [x] Testes automatizados (unitários e de ponta a ponta) com CI no GitHub Actions.
+## Estrutura
 
-A lista completa de melhorias de arquitetura e segurança, com prioridades e esforço, está em [`docs/MELHORIAS-PENDENTES.md`](docs/MELHORIAS-PENDENTES.md).
-
----
-
-<div align="center">
-<sub>Feito com Next.js, React e TypeScript. Projeto independente, sem vínculo com o Taiga.</sub>
-</div>
+```
+src/
+  server.ts            entrada (porta, encerramento gracioso)
+  app.ts               rotas, autenticação, tratamento de erros
+  lib/
+    taiga.ts           cliente do Taiga + token do usuário de serviço
+    session.ts         sessões em memória (só identidade, sem token)
+    ratelimit.ts       freio de força bruta
+    metrics.ts, kanban*.ts, sprint.ts   regras e métricas
+    item-detail.ts     detalhe de story/task
+scripts/mock-taiga.mjs Taiga simulado (desenvolvimento e testes; fora da imagem)
+tests/                 unitários e de API
+deploy/openshift/      manifests
+```

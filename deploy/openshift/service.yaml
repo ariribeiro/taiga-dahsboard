@@ -1,0 +1,10 @@
+# Só ClusterIP: a API NÃO tem Route. Quem a alcança é o front, por dentro do cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: taiga-dev-view-back
+  labels: { app: taiga-dev-view-back }
+spec:
+  selector: { app: taiga-dev-view-back }
+  ports:
+    - { name: http, port: 8080, targetPort: http }

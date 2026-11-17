@@ -1,0 +1,15 @@
+# Só os pods do front (mesmo namespace) falam com a API.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: taiga-dev-view-back-from-front
+spec:
+  podSelector:
+    matchLabels: { app: taiga-dev-view-back }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app: taiga-dev-view-front }
+      ports:
+        - { port: 8080 }
