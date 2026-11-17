@@ -118,6 +118,8 @@ TAIGA_URL=https://taiga-api.suaempresa.com
 TAIGA_WEB_URL=https://taiga.suaempresa.com
 ```
 
+> Os endereços de exemplo (`suaempresa.com`) são **ignorados**: o login avisa que a `TAIGA_URL` ainda não foi configurada, e os links `↗` ficam ocultos até você informar o endereço real.
+
 ```bash
 npm run dev      # http://localhost:3000
 ```

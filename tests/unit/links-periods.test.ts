@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { taigaWebLink } from "@/lib/links";
 import { DEFAULT_PERIOD, PERIODS, parsePeriod } from "@/lib/periods";
+import { isExampleUrl } from "@/lib/placeholder";
 
 afterEach(() => { vi.unstubAllEnvs(); });
 
@@ -20,6 +21,10 @@ describe("taigaWebLink", () => {
     vi.stubEnv("TAIGA_WEB_URL", "https://t.com");
     expect(taigaWebLink(undefined, "us", 1)).toBeNull();
   });
+  it("o endereço de exemplo do .env.example conta como não configurado (sem link quebrado)", () => {
+    vi.stubEnv("TAIGA_WEB_URL", "https://taiga.suaempresa.com");
+    expect(taigaWebLink("p", "us", 1)).toBeNull();
+  });
   it("codifica o slug", () => {
     vi.stubEnv("TAIGA_WEB_URL", "https://t.com");
     expect(taigaWebLink("a b/c", "us", 1)).toBe("https://t.com/project/a%20b%2Fc/us/1");
@@ -32,5 +37,16 @@ describe("parsePeriod", () => {
   });
   it("valores inválidos voltam ao padrão", () => {
     for (const v of [undefined, "", "abc", "15", "-14", "28.5"]) expect(parsePeriod(v), String(v)).toBe(DEFAULT_PERIOD);
+  });
+});
+
+describe("isExampleUrl", () => {
+  it("reconhece os endereços de exemplo, com ou sem protocolo, porta ou caminho", () => {
+    for (const u of ["https://taiga.suaempresa.com", "https://taiga-api.suaempresa.com/", "http://taiga.suaempresa.com:8000", "taiga.suaempresa.com", "https://x.suaempresa.com.br/y"])
+      expect(isExampleUrl(u), u).toBe(true);
+  });
+  it("não confunde endereços reais, nem valores vazios", () => {
+    for (const u of ["https://taiga.minhaempresa.com", "https://suaempresa.com.evil.io", "http://localhost:9000", "https://taiga.exemplo.com", "", undefined, null])
+      expect(isExampleUrl(u as string), String(u)).toBe(false);
   });
 });

@@ -122,6 +122,11 @@ describe("taigaLogin", () => {
     expect(url).toBe("http://taiga.test/api/v1/auth");
     expect(init.method).toBe("POST");
   });
+  it("TAIGA_URL com o valor de exemplo do .env.example também avisa 'CONFIG'", async () => {
+    vi.resetModules(); vi.stubEnv("TAIGA_URL", "https://taiga-api.suaempresa.com");
+    const { taigaLogin } = await import("@/lib/taiga");
+    await expect(taigaLogin("u", "p")).rejects.toMatchObject({ message: "CONFIG" });
+  });
   it("sem TAIGA_URL configurada, avisa 'CONFIG'", async () => {
     vi.resetModules(); vi.stubEnv("TAIGA_URL", "");
     const { taigaLogin } = await import("@/lib/taiga");
