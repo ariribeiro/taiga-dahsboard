@@ -110,6 +110,13 @@ function handle(req, res) {
     const total = 16, n = 14, open = [16,16,15,15,13,13,11,11]; // 8 dias já decorridos (hoje = índice 7)
     return send(res, 200, { days: Array.from({ length: n }, (_, i) => ({ day: iso(-7 + i), name: i + 1, open_points: i < 8 ? open[i] : null, optimal_points: Math.round(total * (1 - i / (n - 1)) * 10) / 10 })) });
   }
+  if (p === "/memberships" && u.searchParams.get("member") === "1") {
+    // vínculos do usuário logado (Ana): Servidor Dirti/Fiscal em todos os projetos, exceto o 77 (só Desenvolvedor)
+    const proj = u.searchParams.get("project");
+    const role = (id) => (id === 77 ? "Desenvolvedor" : id % 2 ? "Servidor Dirti/Fiscal" : "SERVIDOR/DIRTI/FISCALIZAÇÃO");
+    const ids = proj ? [+proj] : PROJ.map((x) => x.id);
+    return send(res, 200, ids.map((id) => ({ project: id, user: 1, role_name: role(id) })));
+  }
   if (p === "/memberships") return send(res, 200, members);
   if (p === "/milestones" && u.searchParams.get("project") === "9") return send(res, 200, []); // Scrum ligado, sem sprints
   if (p === "/milestones") return send(res, 200, milestones);

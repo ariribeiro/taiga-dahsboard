@@ -167,8 +167,9 @@ export async function getProjects(userId: number): Promise<TProject[]> {
 /** O usuário é Servidor Dirti/Fiscal neste projeto? Usado para bloquear o acesso ao projeto. */
 export async function hasProjectAccess(userId: number, projectId: number): Promise<boolean> {
   try {
-    const members = await getMembers(projectId);
-    return members.some((m) => m.user === userId && isAllowedRole(m.role_name));
+    // pede só o vínculo do usuário; o filtro local garante o resultado mesmo se o Taiga ignorar ?member=
+    const mine = await taigaGet<TMember[]>(`/memberships?project=${projectId}&member=${userId}`);
+    return mine.some((m) => m.user === userId && isAllowedRole(m.role_name));
   } catch (e) {
     if (e instanceof TaigaError && (e.status === 403 || e.status === 404)) return false;
     throw e;
