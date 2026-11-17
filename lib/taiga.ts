@@ -145,10 +145,14 @@ export type TTask = {
   is_blocked?: boolean; blocked_note?: string;
 };
 
-// Só quem tem este papel NO PROJETO (nome exato no Taiga) pode ver o projeto.
+// Só quem tem este papel NO PROJETO pode ver o projeto. O nome varia entre projetos, então basta o papel
+// conter "servidor", "fiscal" ou "fiscalização" (ignorando maiúsculas e acentos; "fiscal" já cobre "fiscalização").
 export const ALLOWED_ROLE = "Servidor Dirti/Fiscal";
-const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
-const isAllowedRole = (role?: string | null) => norm(role ?? "") === norm(ALLOWED_ROLE);
+const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+export function isAllowedRole(role?: string | null): boolean {
+  const t = plain(role ?? "");
+  return ["servidor", "fiscal", "fiscalizacao"].some((w) => t.includes(w));
+}
 
 export async function getProjects(userId: number): Promise<TProject[]> {
   const [projects, memberships] = await Promise.all([
