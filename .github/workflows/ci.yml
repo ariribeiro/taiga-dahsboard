@@ -50,7 +50,7 @@ jobs:
 
       - name: Guardar o relatório do Playwright (só se algo falhar)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-node${{ matrix.node }}
           path: playwright-report/
