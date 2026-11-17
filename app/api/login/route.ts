@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   try {
     const u = await taigaLogin(username, password);
     loginLimiters.user.reset(userKey);
-    createSession({
+    await createSession({
       authToken: u.auth_token, refresh: u.refresh, userId: u.id,
       fullName: u.full_name_display ?? u.full_name ?? u.username,
       username: u.username, photo: u.photo ?? null,

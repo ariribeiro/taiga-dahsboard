@@ -5,7 +5,7 @@ import { Avatar, Logo } from "./ui";
 import { ProjectSwitcher } from "./project-switcher";
 
 export async function Header({ name }: { name: string }) {
-  const cur = getSession();
+  const cur = await getSession();
   const photo = cur?.session.photo ?? null;
   // Se a lista falhar, o cabeçalho continua funcionando, só sem o seletor.
   const projects = cur ? await getProjectsCached(cur.session.userId).catch(() => []) : [];

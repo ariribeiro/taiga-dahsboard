@@ -74,7 +74,7 @@ async function readJson<T>(res: Response): Promise<T> {
 
 /** Requisição autenticada (renova o token uma vez em 401). `paginated`: não pede para desabilitar a paginação. */
 async function taigaFetch(path: string, paginated: boolean): Promise<Response> {
-  const cur = getSession();
+  const cur = await getSession();
   if (!cur) throw new TaigaError(401, "Sem sessão");
   const { session } = cur;
 
