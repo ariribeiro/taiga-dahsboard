@@ -17,6 +17,7 @@ Legenda de esforço: **P** (horas) · **M** (1 a 3 dias) · **G** (mais de 3 dia
 | Dependências | **Migração para Next.js 16.4.6 e React 19** (antes: Next 14.2.15), Dependabot semanal e `engines.node >= 20.9`. | `npm audit --omit=dev`: **0 vulnerabilidades** (eram 1 crítica e 1 alta). Toda a bateria de testes repetida em produção e em desenvolvimento (Turbopack) sem regressões. |
 | Servidor de desenvolvimento | `npm run dev` agora escuta só em `127.0.0.1` (antes, em todas as interfaces). | — |
 | Redirecionamentos relativos | O login e o logout devolvem `Location` relativo (`/projects`, `/`). Antes, o endereço era montado a partir do servidor e quebrava o login ao abrir por `127.0.0.1`, por IP ou atrás de proxy HTTPS (o CSP `form-action` bloqueava o salto entre origens). | Login e logout verificados abrindo por `localhost` e `127.0.0.1`, em desenvolvimento e produção, e com cabeçalhos de proxy. |
+| Testes automatizados e CI | **76 testes unitários** (Vitest) e **41 de ponta a ponta** (Playwright) que cobrem os roteiros manuais; workflow no GitHub Actions (tipos, testes, build e `npm audit`) em Node 22 e 24; Dependabot ignora saltos maiores de `@types/node` e acompanha as ações do GitHub. | Os testes foram validados **quebrando o código de propósito** (redirecionamento absoluto, cabeçalho removido, limite desligado): a suíte falhou em todos. |
 
 ## 🔴 Pendências de prioridade alta
 
@@ -27,13 +28,6 @@ Hoje as sessões ficam na memória de **uma** instância; reiniciar desloga todo
 - Remover `'unsafe-inline'` de `script-src` usando CSP com *nonce* (exige *middleware*).
 - Restringir `img-src` ao endereço de mídia do Taiga. Hoje ele aceita qualquer `http(s)` porque ainda não sabemos em que domínio ficam as fotos e anexos.
 - Imagens externas escritas numa story (Markdown) podem revelar o IP de quem abre. Alternativa: **proxy de mídia autenticado**, que também resolveria mídia protegida do Taiga.
-
-### D. Testes automatizados e CI — **M**
-Não há testes nem integração contínua, e a branch `main` não tem proteção.
-- Vitest nas funções puras (`lib/metrics.ts`, `lib/kanban-metrics.ts`, `lib/roles.ts`, `lib/ratelimit.ts`).
-- Playwright nos fluxos. **Os cenários já existem** como roteiros manuais e podem virar testes: login, limite de tentativas, expiração de sessão, CSP sem violações, timeout, retentativa, concorrência, anexos maliciosos, favoritos, Kanban com amostra parcial.
-- GitHub Actions: tipos, build, testes e `npm audit`. Exige permissão de *workflows* para o envio.
-- Proteção da `main` (revisão obrigatória, sem push forçado).
 
 ## 🟠 Prioridade média
 
@@ -49,6 +43,7 @@ Não há testes nem integração contínua, e a branch `main` não tem proteçã
 
 ## 🟡 Governança e decisões em aberto
 
+- **Proteger a `main`:** em *Settings → Branches → Add rule*, exigir os checks do CI ("Testes (Node 22)", "Testes (Node 24)" e "Auditoria de dependências") antes de juntar PRs. Sem isso, o CI avisa, mas não impede o merge.
 - **Dados de desempenho individual (LGPD):** hoje qualquer membro do projeto vê os números de todos. `DEV_ROLES` é só um filtro de exibição, **não** controle de acesso. Decidir quem pode ver o quê (por exemplo, só gestores) e se há registro de acessos.
 - **Hospedagem:** onde vai rodar e em quantas instâncias (define a urgência do item B).
 - **Segredos:** adicionar `gitleaks` no CI ou como *pre-commit* (já houve um domínio no `.env.example`).
@@ -57,7 +52,7 @@ Não há testes nem integração contínua, e a branch `main` não tem proteçã
 
 ## Ordem sugerida
 
-1. **D** (testes e CI): a migração foi validada à mão, e os testes automatizados evitam regressões daqui para a frente.
-2. **H** e **K** (rápidos e visíveis para o usuário).
+1. **Proteção da branch `main`** (exigir o CI verde antes de juntar): configuração no GitHub, sem código. Ver "Decisões em aberto".
+2. **H** (páginas de erro amigáveis).
 3. **B** e **C**, conforme a decisão de hospedagem.
 4. **E**, **F**, **G**, **I**, **J**, **L**.

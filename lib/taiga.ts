@@ -1,7 +1,10 @@
 import { getSession } from "./session";
 import { Semaphore } from "./limit";
+import { isExampleUrl } from "./placeholder";
 
-export const TAIGA_URL = (process.env.TAIGA_URL ?? "").replace(/\/+$/, "");
+// Valor de exemplo do .env.example (…suaempresa.com) conta como "não configurada" (login mostra o aviso de configuração).
+const rawUrl = (process.env.TAIGA_URL ?? "").replace(/\/+$/, "");
+export const TAIGA_URL = isExampleUrl(rawUrl) ? "" : rawUrl;
 const API = `${TAIGA_URL}/api/v1`;
 
 const num = (v: string | undefined, d: number) => (Number(v) > 0 ? Number(v) : d);
