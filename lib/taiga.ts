@@ -142,8 +142,18 @@ export type TTask = {
   is_blocked?: boolean; blocked_note?: string;
 };
 
-export const getProjects = (userId: number) =>
-  taigaGet<TProject[]>(`/projects?member=${userId}&order_by=memberships__user_order`);
+// Só entram projetos em que o usuário tem este papel (nome exato no Taiga).
+export const ALLOWED_ROLE = "Servidor Dirti/Fiscal";
+const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+
+export async function getProjects(userId: number): Promise<TProject[]> {
+  const [projects, memberships] = await Promise.all([
+    taigaGet<TProject[]>(`/projects?member=${userId}&order_by=memberships__user_order`),
+    taigaGet<{ project: number; role_name: string }[]>(`/memberships?member=${userId}`),
+  ]);
+  const ok = new Set(memberships.filter((m) => norm(m.role_name ?? "") === norm(ALLOWED_ROLE)).map((m) => m.project));
+  return projects.filter((p) => ok.has(p.id));
+}
 const projCache = ((globalThis as unknown as { __projCache?: Map<number, { at: number; data: TProject[] }> }).__projCache ??= new Map());
 /** Lista de projetos com cache de 5 min — usada no seletor do cabeçalho, que aparece em toda página. */
 export async function getProjectsCached(userId: number): Promise<TProject[]> {
