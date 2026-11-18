@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { ApiError, apiGet, getMe } from "@/lib/api";
-import type { SprintResponse } from "@/lib/api-types";
-import { Forbidden } from "../../forbidden";
-import { CriteriaHelp } from "../../criteria-help";
-import { KanbanPage } from "../../kanban-page";
-import { parsePeriod } from "@/lib/periods";
-import { Header } from "../../header";
-import { Burndown } from "../../burndown";
-import { UnassignedKpi } from "../../unassigned";
-import { taigaWebLink } from "@/lib/links";
-import { Avatar, Bar, Kpi, Picture, Ring, SprintPicker, fmtDate as fmt } from "../../ui";
+import { apiGet, getMe } from "@/lib/api/client";
+import type { KanbanResponse, SprintResponse } from "@/lib/api/types";
+import { renderApiError } from "@/components/layout/api-error";
+import { CriteriaHelp } from "@/components/ui/criteria-help";
+import { KanbanView } from "@/components/kanban/kanban-view";
+import { parsePeriod } from "@/lib/utils/periods";
+import { Header } from "@/components/layout/header";
+import { Burndown } from "@/components/sprint/burndown";
+import { UnassignedKpi } from "@/components/sprint/unassigned";
+import { taigaWebLink } from "@/lib/utils/links";
+import { Avatar, Bar, Kpi, Ring } from "@/components/ui/primitives";
+import { Picture } from "@/components/ui/picture";
+import { SprintPicker } from "@/components/sprint/sprint-picker";
+import { fmtDate as fmt } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +29,8 @@ export default async function ProjectPage(props: { params: Promise<{ id: string 
     const qs = new URLSearchParams({ stats: "1", ...(searchParams.sprint ? { sprint: searchParams.sprint } : {}) });
     const data = await apiGet<SprintResponse>(`/projects/${pid}/sprint?${qs}`);   // a API confere o papel da pessoa no projeto (403)
     if (data.kind === "kanban") {
-      return <KanbanPage pid={pid} userName={me.fullName} days={parsePeriod(searchParams.days)} />;
+      const kanban = await apiGet<KanbanResponse>(`/projects/${pid}/kanban?days=${parsePeriod(searchParams.days)}`);
+      return <KanbanView data={kanban} pid={pid} userName={me.fullName} />;
     }
     const { project, sorted, sprint } = data;
     if (!sprint) {
@@ -124,11 +128,6 @@ export default async function ProjectPage(props: { params: Promise<{ id: string 
       </>
     );
   } catch (e) {
-    if (e instanceof ApiError) {
-      if (e.status === 401) redirect("/");
-      if (e.status === 403) return <Forbidden name={me.fullName} />;
-      if (e.status === 404) return (<><Header name={me.fullName} /><main className="wrap"><p className="err">Sem permissão ou projeto não encontrado.</p><Link href="/projects">Voltar</Link></main></>);
-    }
-    throw e;
+    return renderApiError(e, me.fullName);
   }
 }

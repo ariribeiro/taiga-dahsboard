@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Picture } from "./picture";
-import { useFavorites } from "./use-favorites";
+import { Picture } from "@/components/ui/picture";
+import { useFavorites } from "@/components/projects/use-favorites";
 
 type P = { id: number; name: string; logo: string | null };
 

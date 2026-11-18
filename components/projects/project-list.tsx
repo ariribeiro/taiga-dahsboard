@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useMemo } from "react";
-import { Picture } from "./picture";
-import { useFavorites } from "./use-favorites";
+import { Picture } from "@/components/ui/picture";
+import { useFavorites } from "@/components/projects/use-favorites";
 
 type P = { id: number; name: string; description: string; logo: string | null };
 

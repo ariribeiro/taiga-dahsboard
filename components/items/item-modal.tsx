@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import type { ItemDetail } from "@/lib/item";
-import { Picture } from "./picture";
-import { Md } from "./markdown";
-import { Lightbox } from "./lightbox";
-import { ExtLink } from "./ui";
+import type { ItemDetail } from "@/lib/api/types";
+import { Picture } from "@/components/ui/picture";
+import { Md } from "@/components/ui/markdown";
+import { Lightbox } from "@/components/ui/lightbox";
+import { ExtLink } from "@/components/ui/primitives";
 
 // Nomes vindos TODO EM MAIÚSCULAS ficam em formato de nome próprio.
 const pretty = (n: string) => (n && n === n.toUpperCase() ? n.toLowerCase().replace(/(^|\s)(\S)/g, (_, a, b) => a + b.toUpperCase()).replace(/\b(Da|De|Do|Das|Dos|E)\b/g, (m) => m.toLowerCase()) : n);

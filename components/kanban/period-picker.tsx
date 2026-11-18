@@ -1,7 +1,7 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { PERIODS } from "@/lib/periods";
+import { PERIODS } from "@/lib/utils/periods";
 
 /** Troca o período de análise (projetos Kanban) assim que o usuário escolhe, sem botão. */
 export function PeriodPicker({ current }: { current: number }) {

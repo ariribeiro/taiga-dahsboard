@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { colorFor, initials } from "@/lib/colors";
+import { colorFor, initials } from "@/lib/utils/colors";
 
 /** Imagem do Taiga (foto/logo) com fallback para iniciais coloridas se faltar ou falhar ao carregar. */
 export function Picture({ src, name, size = 40, square = false }: { src?: string | null; name: string; size?: number; square?: boolean }) {

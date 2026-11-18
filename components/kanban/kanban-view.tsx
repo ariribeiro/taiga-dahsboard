@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { apiGet } from "@/lib/api";
-import type { KanbanResponse, KDev, KItem } from "@/lib/api-types";
-import { taigaWebLink } from "@/lib/links";
-import { Header } from "./header";
-import { Avatar, Chip, ExtLink, Kpi, Picture } from "./ui";
-import { ItemButton } from "./item-modal";
-import { PeriodPicker } from "./period-picker";
-import { ThroughputChart } from "./kanban-chart";
-import { KanbanHelp } from "./criteria-help";
+import type { KanbanResponse, KDev, KItem } from "@/lib/api/types";
+import { taigaWebLink } from "@/lib/utils/links";
+import { Header } from "@/components/layout/header";
+import { Avatar, Chip, ExtLink, Kpi } from "@/components/ui/primitives";
+import { Picture } from "@/components/ui/picture";
+import { ItemButton } from "@/components/items/item-modal";
+import { PeriodPicker } from "@/components/kanban/period-picker";
+import { ThroughputChart } from "@/components/kanban/kanban-chart";
+import { KanbanHelp } from "@/components/ui/criteria-help";
 
 function Row({ it, pid, slug, web }: { it: KItem; pid: number; slug: string; web: string }) {
   return (
@@ -43,10 +43,9 @@ function DevCard({ d, pid, slug, web, days, points }: { d: KDev; pid: number; sl
   );
 }
 
-/** Visão de fluxo para projetos Kanban (sem sprints). */
-export async function KanbanPage({ pid, userName, days }: { pid: number; userName: string; days: number }) {
-  const data = await apiGet<KanbanResponse>(`/projects/${pid}/kanban?days=${days}`);
-  const { project, metrics: m, meta, board } = data;
+/** Visão de fluxo para projetos Kanban (sem sprints). Só desenha: quem busca os dados é a página. */
+export function KanbanView({ data, pid, userName }: { data: KanbanResponse; pid: number; userName: string }) {
+  const { project, metrics: m, meta, board, days } = data;
   const STALE_DAYS = meta.staleDays;
   const slug = project.slug;
   const delta = m.doneInWindow != null && m.prevDone != null ? m.doneInWindow - m.prevDone : null;

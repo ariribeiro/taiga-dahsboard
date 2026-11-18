@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
-import { ApiError, getMe, getProjects } from "@/lib/api";
-import { Header } from "../header";
-import { ProjectList } from "../project-list";
+import { getMe, getProjects } from "@/lib/api/client";
+import { renderApiError } from "@/components/layout/api-error";
+import { Header } from "@/components/layout/header";
+import { ProjectList } from "@/components/projects/project-list";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +13,7 @@ export default async function Projects() {
   try {
     projects = await getProjects(true);
   } catch (e) {
-    if (e instanceof ApiError && e.status === 401) redirect("/");
-    throw e;
+    return renderApiError(e, me.fullName);
   }
   return (
     <>

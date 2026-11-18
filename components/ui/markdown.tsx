@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
-import { Lightbox } from "./lightbox";
+import { Lightbox } from "@/components/ui/lightbox";
 
 /** Imagem do Taiga: resolve URL relativa, abre ampliada no visualizador e, se falhar, mostra um link. */
 function Img({ src, alt, base }: { src?: string; alt?: string; base: string }) {

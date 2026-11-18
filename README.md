@@ -114,7 +114,7 @@ flowchart LR
 - O navegador só fala com o **front** (única `Route`). A API fica **dentro do cluster**, protegida por `NetworkPolicy` e por uma chave interna (`API_KEY`).
 - **Login:** o front repassa usuário e senha à API, que confere no Taiga e **descarta o token** da pessoa; fica só uma sessão opaca, guardada no cookie `HttpOnly` (`Secure` e `__Host-` em produção).
 - **Permissões:** a API confere o papel **Servidor Dirti/Fiscal** da pessoa em cada projeto. Como o usuário de serviço enxerga mais do que ela, essa regra é verificada em toda rota.
-- O front mantém uma **cópia dos tipos** do contrato em `lib/api-types.ts`; ao mudar a API, atualize os dois lados (veja `docs/API.md` no repositório do back).
+- O front mantém uma **cópia dos tipos** do contrato em `lib/api/types.ts`; ao mudar a API, atualize os dois lados (veja `docs/API.md` no repositório do back).
 
 ## 🚀 Começando
 
@@ -188,21 +188,28 @@ A lista de projetos do cabeçalho fica em cache por 5 minutos. No Kanban, as col
 ## 🗂️ Estrutura
 
 ```
-app/
-  page.tsx                      login
-  projects/                     lista de projetos (favoritos)
-  projects/[id]/                sprint (Scrum) ou visão de fluxo (Kanban)
-  projects/[id]/devs/[userId]/  situação de uma pessoa na sprint
-  api/login · api/logout        ponte para a sessão da API (cookie)
-  api/item                      detalhes de story/task para o modal (repassa à API)
-  healthz                       sonda do OpenShift
-  item-modal · lightbox · …     componentes de interface
+app/                              só rotas (o que define as URLs)
+  page.tsx                        login
+  projects/                       lista de projetos (favoritos)
+  projects/[id]/                  sprint (Scrum) ou visão de fluxo (Kanban)
+  projects/[id]/devs/[userId]/    situação de uma pessoa na sprint
+  api/login · api/logout          ponte para a sessão da API (cookie)
+  api/item                        detalhes de story/task para o modal (repassa à API)
+  healthz                         sonda do OpenShift
+components/                       interface, agrupada por funcionalidade
+  layout/                         header, forbidden, api-error (tratamento padrão de erros da API nas páginas)
+  ui/                             primitives (Ring, Bar, Kpi, Chip…), picture, lightbox, markdown, criteria-help
+  projects/                       project-list, project-switcher, use-favorites
+  sprint/                         sprint-picker, burndown, unassigned
+  kanban/                         kanban-view (só desenha), kanban-chart, period-picker
+  items/                          item-modal
 lib/
-  api.ts                        cliente da API (chave interna, sessão, erros)
-  api-types.ts                  tipos do contrato com a API (cópia)
-  client-ip.ts · links.ts       IP do cliente, links para o Taiga
-deploy/openshift/               manifests
+  api/                            client.ts (só servidor: chave interna, sessão, erros), types.ts (contrato, cópia), client-ip.ts
+  utils/                          colors, links, periods, format (funções puras)
+deploy/openshift/                 manifests
 ```
+
+Convenções: páginas em `app/` buscam os dados (`apiGet`) e passam prontos aos componentes; o que lê a `API_KEY` (`lib/api/client.ts`) usa `server-only`, então o build falha se um componente de cliente o importar.
 
 ## 🧪 Testes
 

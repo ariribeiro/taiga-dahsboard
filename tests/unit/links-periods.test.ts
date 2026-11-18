@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { taigaWebLink } from "@/lib/links";
-import { DEFAULT_PERIOD, PERIODS, parsePeriod } from "@/lib/periods";
+import { taigaWebLink } from "@/lib/utils/links";
+import { DEFAULT_PERIOD, PERIODS, parsePeriod } from "@/lib/utils/periods";
 
 describe("taigaWebLink", () => {
   it("monta o link de story e de task", () => {

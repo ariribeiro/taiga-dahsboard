@@ -1,6 +1,7 @@
+import "server-only"; // o build falha se algum componente de cliente importar este módulo (ele lê a chave da API)
 import { cache } from "react";
 import { cookies } from "next/headers";
-import type { TProject, User } from "./api-types";
+import type { TProject, User } from "./types";
 
 /** Endereço INTERNO da API (Service do OpenShift). O navegador nunca fala com ela: só este servidor. */
 export const API_URL = (process.env.API_URL ?? "http://localhost:8080").replace(/\/+$/, "");

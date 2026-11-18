@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { getMe, getProjects } from "@/lib/api";
-import { Avatar, Logo } from "./ui";
-import { ProjectSwitcher } from "./project-switcher";
+import { getMe, getProjects } from "@/lib/api/client";
+import { Avatar, Logo } from "@/components/ui/primitives";
+import { ProjectSwitcher } from "@/components/projects/project-switcher";
 
 export async function Header({ name }: { name: string }) {
   const me = await getMe().catch(() => null);

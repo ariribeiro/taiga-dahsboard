@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { ApiError, apiGet, getMe } from "@/lib/api";
-import type { SprintResponse } from "@/lib/api-types";
-import { Forbidden } from "../../../../forbidden";
-import { taigaWebLink } from "@/lib/links";
-import { ItemButton } from "../../../../item-modal";
-import { Header } from "../../../../header";
-import { Avatar, Bar, Chip, ExtLink, Kpi, Ring, SprintPicker, fmtDate } from "../../../../ui";
+import { apiGet, getMe } from "@/lib/api/client";
+import { renderApiError } from "@/components/layout/api-error";
+import type { SprintResponse } from "@/lib/api/types";
+import { taigaWebLink } from "@/lib/utils/links";
+import { ItemButton } from "@/components/items/item-modal";
+import { Header } from "@/components/layout/header";
+import { Avatar, Bar, Chip, ExtLink, Kpi, Ring } from "@/components/ui/primitives";
+import { SprintPicker } from "@/components/sprint/sprint-picker";
+import { fmtDate } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
 
@@ -108,11 +110,6 @@ export default async function DevPage(props: { params: Promise<{ id: string; use
       </>)}
     </>);
   } catch (e) {
-    if (e instanceof ApiError) {
-      if (e.status === 401) redirect("/");
-      if (e.status === 403) return <Forbidden name={me.fullName} />;
-      if (e.status === 404) return shell(<><p className="err">Sem permissão ou item não encontrado.</p><Link href="/projects">Voltar</Link></>);
-    }
-    throw e;
+    return renderApiError(e, me.fullName);
   }
 }

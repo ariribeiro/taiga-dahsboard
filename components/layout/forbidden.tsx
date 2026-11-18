@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Header } from "./header";
+import { Header } from "@/components/layout/header";
 
 /** Mostrada quando o usuário não é Servidor Dirti/Fiscal no projeto pedido. */
 export function Forbidden({ name }: { name: string }) {

@@ -8,4 +8,4 @@ Veja também `docs/MELHORIAS-PENDENTES.md` no repositório da API (sessões em R
 | H | Páginas de erro amigáveis | Timeout/queda da API hoje vira a página 500 genérica. Criar `error.tsx` e `not-found.tsx` com mensagem e botão de tentar de novo. | P |
 | — | Origin check no `POST /api/login` | O cookie `SameSite=Lax` já protege as ações; checar `Origin` fecharia o *login CSRF*. | P |
 | — | `gitleaks` no CI | Evitar segredos no repositório. | P |
-| — | Cópia dos tipos do contrato | `lib/api-types.ts` é mantido à mão; gerar a partir de um esquema (OpenAPI/zod) quando o contrato crescer. | M |
+| — | Cópia dos tipos do contrato | `lib/api/types.ts` é mantido à mão; gerar a partir de um esquema (OpenAPI/zod) quando o contrato crescer. | M |

@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ItemButton } from "./item-modal";
-import { ExtLink } from "./ui";
+import { ItemButton } from "@/components/items/item-modal";
+import { ExtLink } from "@/components/ui/primitives";
 
 type Row = { id: number; ref: number; subject: string; status: string; color: string; closed: boolean; points?: number; storyRef?: number | null; href: string | null };
 

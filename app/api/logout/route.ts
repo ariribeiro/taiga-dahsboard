@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { apiFetch, COOKIE, sessionId } from "@/lib/api";
+import { apiFetch, COOKIE, sessionId } from "@/lib/api/client";
 
 export async function POST() {
   const sid = await sessionId();

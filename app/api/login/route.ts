@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { ApiError, apiFetch, COOKIE, sessionId } from "@/lib/api";
-import { clientIp } from "@/lib/client-ip";
+import { ApiError, apiFetch, COOKIE, sessionId } from "@/lib/api/client";
+import { clientIp } from "@/lib/api/client-ip";
 import { cookies } from "next/headers";
 
 // Erros da API que a tela de login sabe explicar (o resto vira "REDE").

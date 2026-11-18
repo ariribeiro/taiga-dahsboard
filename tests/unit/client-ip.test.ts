@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clientIp } from "@/lib/client-ip";
+import { clientIp } from "@/lib/api/client-ip";
 
 const h = (o: Record<string, string>) => new Headers(o);
 

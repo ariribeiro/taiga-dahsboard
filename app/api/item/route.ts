@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ApiError, apiFetch, sessionId } from "@/lib/api";
+import { ApiError, apiFetch, sessionId } from "@/lib/api/client";
 
 export const dynamic = "force-dynamic";
 

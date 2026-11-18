@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { getMe } from "@/lib/api";
-import { Logo } from "./ui";
+import { getMe } from "@/lib/api/client";
+import { Logo } from "@/components/ui/primitives";
 
 const MSG: Record<string, string> = {
   "1": "Informe usuário e senha.",

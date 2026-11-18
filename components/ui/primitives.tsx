@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 
-import { colorFor, initials } from "@/lib/colors";
-import { Picture } from "./picture";
-export { colorFor, initials, Picture };
+import { Picture } from "@/components/ui/picture";
 
 export const Avatar = ({ name, src, size = 40 }: { name: string; src?: string | null; size?: number }) => (
   <Picture name={name} src={src} size={size} />
@@ -40,10 +38,6 @@ export const Kpi = ({ value, label, icon }: { value: ReactNode; label: string; i
 export const Logo = () => (
   <span className="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg></span>
 );
-
-export { SprintPicker } from "./sprint-picker";
-
-export const fmtDate = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 
 /** Link “↗” para abrir a story/task no Taiga (não aparece se TAIGA_WEB_URL não estiver configurada). */
 export const ExtLink = ({ href, what = "item" }: { href: string | null | undefined; what?: string }) =>
