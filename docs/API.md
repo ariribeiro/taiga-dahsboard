@@ -33,4 +33,4 @@ Com `sprint: null` o projeto não tem sprints (sem `devs`/`overview`). Projeto K
 ## GET /items?kind=us|task&id=&project=
 `ItemDetail` (veja `src/domain/item.ts`). 404 se o item não for do projeto informado.
 
-Os tipos `DevView`, `SprintOverview`, `KStatus`, `KanbanMetrics` etc. estão em `src/domain/metrics.ts` e `src/domain/kanban-metrics.ts`. O front mantém uma cópia em `lib/api-types.ts`; **ao mudar o contrato, atualize os dois.**
+Os tipos `DevView`, `SprintOverview`, `KStatus`, `KanbanMetrics` etc. estão em `src/domain/metrics.ts` e `src/domain/kanban-metrics.ts`. O front mantém uma cópia em `lib/api/types.ts`; **ao mudar o contrato, atualize os dois.**
