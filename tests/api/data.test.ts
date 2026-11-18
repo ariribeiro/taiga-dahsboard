@@ -82,6 +82,16 @@ describe("Kanban", () => {
     expect(d.partial).toBe(false);
   });
 
+  it("o cache dos concluídos é separado por projeto: um projeto nunca recebe os dados de outro", async () => {
+    // O simulador devolve 300 concluídos só para o projeto 10; os demais projetos recebem a lista curta de stories.
+    expect((await json("/projects/10/kanban")).doneTotal).toBe(300);
+    const outro = await json("/projects/1/kanban");
+    expect(outro.doneTotal).not.toBe(300);
+    expect(outro.project.id).toBe(1);
+    expect((await json("/projects/10/kanban")).doneTotal).toBe(300);            // continua certo, agora vindo do cache
+    expect([...(globalThis as unknown as { __kanbanDone: Map<string, unknown> }).__kanbanDone.keys()].sort()).toEqual(["1", "10"]);
+  });
+
   it("o período segue a lista permitida; valor inválido volta ao padrão", async () => {
     expect((await json("/projects/10/kanban?days=84")).metrics.throughput).toHaveLength(12);
     expect((await json("/projects/10/kanban?days=15")).days).toBe(28);
