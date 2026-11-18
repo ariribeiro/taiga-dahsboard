@@ -14,9 +14,12 @@ test.describe("falhas do Taiga", () => {
     await loginOk(page, unique("u"));
     await modo(page.request, { hang: "/milestones" });
     const t0 = Date.now();
-    const r = await page.goto("/projects/1");
-    expect(Date.now() - t0).toBeLessThan(5000);
-    expect(r!.status()).toBe(500);
+    await page.goto("/projects/1");
+    // Com o esqueleto (loading.tsx) a resposta já começou com 200, então a falha aparece na própria página:
+    // o esqueleto some e dá lugar à página de erro do Next, em poucos segundos.
+    await expect(page.getByText("This page couldn’t load")).toBeVisible({ timeout: 5000 });
+    expect(Date.now() - t0).toBeLessThan(6000);
+    await expect(page.locator("[role=status]")).toHaveCount(0);
     await modo(page.request, { hang: null });
     expect((await page.goto("/projects"))!.status()).toBe(200);      // o resto do app segue funcionando
   });

@@ -6,6 +6,7 @@ import { Picture } from "@/components/ui/picture";
 import { Md } from "@/components/ui/markdown";
 import { Lightbox } from "@/components/ui/lightbox";
 import { ExtLink } from "@/components/ui/primitives";
+import { ItemSkeleton } from "@/components/items/item-skeleton";
 
 // Nomes vindos TODO EM MAIÚSCULAS ficam em formato de nome próprio.
 const pretty = (n: string) => (n && n === n.toUpperCase() ? n.toLowerCase().replace(/(^|\s)(\S)/g, (_, a, b) => a + b.toUpperCase()).replace(/\b(Da|De|Do|Das|Dos|E)\b/g, (m) => m.toLowerCase()) : n);
@@ -51,7 +52,7 @@ function Dialog({ kind, id, project, href, onClose }: { kind: "us" | "task"; id:
     <dialog ref={ref} className="modal" onClose={(e) => { if (e.target === e.currentTarget) onClose(); }} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }}>
       <div className="modal-in">
         {err ? <div className="m-pad"><p className="err">{err}</p><button className="ghost" onClick={() => ref.current?.close()}>Fechar</button></div>
-          : !data ? <div className="m-pad"><div className="skel"><i /><i /><i /></div></div>
+          : !data ? <ItemSkeleton />
           : <Body d={data} href={href} onClose={() => ref.current?.close()} />}
       </div>
     </dialog>

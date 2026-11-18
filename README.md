@@ -196,18 +196,21 @@ app/                              só rotas (o que define as URLs)
   api/login · api/logout          ponte para a sessão da API (cookie)
   api/item                        detalhes de story/task para o modal (repassa à API)
   healthz                         sonda do OpenShift
+  **/loading.tsx                  esqueletos de carregamento (lista, projeto, dev)
 components/                       interface, agrupada por funcionalidade
   layout/                         header, forbidden, api-error (tratamento padrão de erros da API nas páginas)
-  ui/                             primitives (Ring, Bar, Kpi, Chip…), picture, lightbox, markdown, criteria-help
+  ui/                             primitives (Ring, Bar, Kpi, Chip…), skeleton (peças dos esqueletos), picture, lightbox, markdown, criteria-help
   projects/                       project-list, project-switcher, use-favorites
   sprint/                         sprint-picker, burndown, unassigned
   kanban/                         kanban-view (só desenha), kanban-chart, period-picker
-  items/                          item-modal
+  items/                          item-modal, item-skeleton
 lib/
   api/                            client.ts (só servidor: chave interna, sessão, erros), types.ts (contrato, cópia), client-ip.ts
   utils/                          colors, links, periods, format (funções puras)
 deploy/openshift/                 manifests
 ```
+
+Esqueletos: cada rota tem um `loading.tsx` que o Next mostra na hora enquanto a página busca os dados; o modal de detalhes tem o seu. Use as peças de `components/ui/skeleton.tsx` e classes com prefixo `sk-` para a estrutura (não reutilize `.kpis`, `.overview`… para os seletores da página real não casarem com o esqueleto). Como a resposta já começou, um erro da API aparece na página (a página de erro do Next), e não mais como HTTP 500.
 
 Convenções: páginas em `app/` buscam os dados (`apiGet`) e passam prontos aos componentes; o que lê a `API_KEY` (`lib/api/client.ts`) usa `server-only`, então o build falha se um componente de cliente o importar.
 

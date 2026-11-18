@@ -62,7 +62,7 @@ export default defineConfig({
   projects: [
     { name: "app", testMatch: /(auth|ratelimit|security|ui)\.spec\.ts/, use: { baseURL: "http://localhost:3100" } },
     { name: "sessao", testMatch: /sessao\.spec\.ts/, use: { baseURL: "http://localhost:3101" } },
-    { name: "falhas", testMatch: /falhas\.spec\.ts/, use: { baseURL: "http://localhost:3102" } },
+    { name: "falhas", testMatch: /(falhas|skeleton)\.spec\.ts/, use: { baseURL: "http://localhost:3102" } },
     { name: "api-fora", testMatch: /api-fora\.spec\.ts/, use: { baseURL: "http://localhost:3103" } },
   ],
 });
